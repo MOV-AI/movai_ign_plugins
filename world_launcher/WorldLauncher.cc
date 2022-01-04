@@ -68,6 +68,7 @@ void WorldLauncher::LoadConfig(const tinyxml2::XMLElement *_pluginElem)
       }
     }
   }
+  this->worldsList.sort(Qt::CaseInsensitive);
   // Inform GUI a update in the Q_PROPERTY
   this->WorldsListChanged();
   // Call the function to Load the FUEL Worlds names
@@ -88,6 +89,7 @@ QStringList WorldLauncher::WorldsList() const
 void WorldLauncher::SetWorldsList(const QStringList &_worldsList)
 {
   this->worldsList = _worldsList;
+  this->worldsList.sort(Qt::CaseInsensitive);
   this->WorldsListChanged();
 }
 
@@ -123,6 +125,7 @@ void WorldLauncher::LoadFuelList()
       }
     }
   }
+  this->fuelWorldsList.sort(Qt::CaseInsensitive);
   // Inform GUI a update in the Q_PROPERTY
   this->FuelWorldsListChanged();
   SetFuelWorld(this->fuelWorldsList[0]);
@@ -142,6 +145,7 @@ QStringList WorldLauncher::FuelWorldsList() const
 void WorldLauncher::SetFuelWorldsList(const QStringList &_worldsList)
 {
   this->fuelWorldsList = _worldsList;
+  this->fuelWorldsList.sort(Qt::CaseInsensitive);
   this->FuelWorldsListChanged();
 }
 
