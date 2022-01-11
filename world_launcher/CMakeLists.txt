@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.10.2 FATAL_ERROR)
+project(movai_ign_plugins)
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 if(POLICY CMP0100)
   cmake_policy(SET CMP0100 NEW)
