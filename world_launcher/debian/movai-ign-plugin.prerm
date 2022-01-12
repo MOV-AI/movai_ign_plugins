@@ -1,7 +1,3 @@
 #!/bin/bash
 # pre remove actions
 # clean unziped files
-
-DIR=/movai_plugins/plugins/gui/
-
-test -d ${DIR}/${PLUGIN_NAME} && rm -r ${DIR}/${PLUGIN_NAME} || true

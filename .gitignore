@@ -36,3 +36,11 @@
 *.exe
 *.out
 *.app
+
+# Packages and other build files
+*.deb
+*.buildinfo
+*.changes
+*debhelper*
+*.substvars
+*/obj-x86_64-linux-gnu/*

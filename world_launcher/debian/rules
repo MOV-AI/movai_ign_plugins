@@ -33,5 +33,3 @@ override_dh_auto_install:
 override_dh_python3:
 
 override_dh_python2:
-
-# TODO: What is this?
