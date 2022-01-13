@@ -1,119 +1,29 @@
-name: "CI - On branch dev Push"
+name: "CI - On main/dev/release branches"
 on:
   pull_request:
     branches:
       - dev
       - main
+      - 'releases/**'
     paths-ignore:
-      - '.bumpversion.cfg'
-      - 'setup.py'
-
+      - '**/package.xml'
 
 jobs:
-  Build:
-    strategy:
-      matrix:
-        plugin: ${{ fromJSON('["world_launcher"]') }}
-    runs-on: ubuntu-20.04
-    container:
-      image: registry.cloud.mov.ai/devops/ros-buildtools-noetic:latest
-      options: --user root
-      credentials:
-        username: ${{ secrets.PORTUS_APP_USER }}
-        password: ${{ secrets.PORTUS_APP_TOKEN }}
-
-    steps:
-    - name: Checkout    
-      uses: actions/checkout@v2
-      with:
-        # Disabling shallow clone is recommended for improving relevancy of reporting
-        fetch-depth: 0
-        submodules: recursive
-
-    - name: Find Package details
-      id: vars
-      run: |
-        PACKAGE_VERSION=$(dpkg-parsechangelog --show-field Version)
-        PACKAGE_NAME=$(dpkg-parsechangelog --show-field Source)
-        echo ::set-output name=pkg_name::$PACKAGE_NAME
-        echo ::set-output name=pkg_version::$PACKAGE_VERSION
-      working-directory: ${{ matrix.plugin }}
-
-    - name: Raise Version
-      id: vars-after-raise
-      run: |
-        PACKAGE_VERSION=${{ steps.vars.outputs.pkg_version }}
-        main_version=${PACKAGE_VERSION%-*}
-        build_id="${PACKAGE_VERSION#*-}"
-        raised_buildid=$(($build_id+1))
-        RAISED_PACKAGE_VERSION="$main_version-$raised_buildid"
-        echo ::set-output name=pkg_version::$RAISED_PACKAGE_VERSION
-      working-directory: ${{ matrix.plugin }}
-
-
-    - name: Install requirements
-      shell: bash
-      run: |
-        IFS=';' read -r -a array <<< "$extra"
-
-        for element in "${array[@]}"
-        do
-            echo "$element"
-            eval $element
-        done
-        echo "finished now the requirement.apt"
-        apt-get install $(cat ./requirements.apt) -y
-      working-directory: ${{ matrix.plugin }}
-      env:
-        extra: |
-          curl -fsSL http://packages.osrfoundation.org/gazebo.key | apt-key add - ;add-apt-repository "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main"
-
-
-    - name: SonarQube Scan
-      uses: SonarSource/sonarqube-scan-action@v1.0.0
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        SONAR_HOST_URL: https://sonarqube.aws.cloud.mov.ai
-      with:
-        projectBaseDir: ./${{ matrix.plugin }}
-        args: >
-          -Dsonar.organization=MOV-AI
-          -Dsonar.projectKey=${{ github.event.repository.name }}
-          -Dsonar.verbose=true
-          -Dsonar.sources=.
-          -Dsonar.scm.provider=git
-          -Dsonar.qualitygate.wait=true
-          -Dsonar.qualitygate.timeout=300
-
-    - name: Link to SonarQube Dashboard
-      shell: bash
-      run: |
-        echo "Please check report here: https://sonarqube.aws.cloud.mov.ai/dashboard?id=${{ github.event.repository.name }}"
-      id: sonar_links
-
-    
-    - name: Build
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_PREFIX_PATH=/usr/lib/x86_64-linux-gnu/
-        make
-      working-directory: ${{ matrix.plugin }}
-
-    - name: Pack
-      run: | 
-        dch -v ${{ steps.vars-after-raise.outputs.pkg_version }} -b -D "UNRELEASED" "bump version"
-        dpkg-buildpackage -b && \
-        mkdir artifacts && \
-        cp ../*.deb artifacts
-      working-directory: ${{ matrix.plugin }}
-
-    - name: Archive binary
-      uses: actions/upload-artifact@v2
-      with:
-        name: packages
-        path: ${{ matrix.plugin }}/artifacts/*
-
-    - name: Print generated packages
-      run: ls -la artifacts
-      working-directory: ${{ matrix.plugin }}
+  CI:
+    uses: MOV-AI/.github/.github/workflows/ros-workflow.yml@feature/add-cpp
+    with:
+      deploy: 'false'
+      components: '["world_launcher"]'
+      custom_requirements: curl -fsSL http://packages.osrfoundation.org/gazebo.key | apt-key add - ;add-apt-repository "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main"
+    secrets:
+      auto_commit_user: ${{ secrets.RAISE_BOT_COMMIT_USER }}
+      auto_commit_mail: ${{ secrets.RAISE_BOT_COMMIT_MAIL }}
+      registry_user: ${{ secrets.PORTUS_APP_USER }}
+      registry_password: ${{ secrets.PORTUS_APP_TOKEN }}
+      nexus_publisher_user: ${{ secrets.NEXUS_PUBLISHER_USR }}
+      nexus_publisher_password: ${{ secrets.NEXUS_PUBLISHER_PWD }}
+      aws_sqs_rosdep_access_key: ${{ secrets.AWS_SQS_ROSDEP_ACCESS_KEY }}
+      aws_sqs_rosdep_secret_access_key: ${{ secrets.AWS_SQS_ROSDEP_SECRET_ACCESS_KEY }}
+      gh_token: ${{ secrets.GITHUB_TOKEN }}
+      sonar_token: ${{ secrets.SONAR_TOKEN }}
+      
