@@ -8,8 +8,6 @@ on:
       - '.bumpversion.cfg'
       - 'setup.py'
 
-env:
-  PROJECT_SRC_DIR: ./
 
 jobs:
   Build:
@@ -32,12 +30,36 @@ jobs:
         fetch-depth: 0
         submodules: recursive
 
+    - name: Find Package details
+      id: vars
+      run: |
+        PACKAGE_VERSION=$(dpkg-parsechangelog --show-field Version)
+        PACKAGE_NAME=$(dpkg-parsechangelog --show-field Source)
+        echo ::set-output name=pkg_name::$PACKAGE_NAME
+        echo ::set-output name=pkg_version::$PACKAGE_VERSION
+      working-directory: ${{ matrix.plugin }}
+
+    - name: Raise Version
+      id: vars-after-raise
+      run: |
+        PACKAGE_VERSION=${{ steps.vars.outputs.pkg_version }}
+        main_version=${PACKAGE_VERSION%-*}
+        build_id="${PACKAGE_VERSION#*-}"
+        raised_buildid=$(($build_id+1))
+        RAISED_PACKAGE_VERSION="$main_version-$raised_buildid"
+        echo ::set-output name=pkg_version::$RAISED_PACKAGE_VERSION
+      working-directory: ${{ matrix.plugin }}
+
+
     - name: Install requirements
       run: |
-        cd ${{ matrix.plugin }}
-        curl -fsSL http://packages.osrfoundation.org/gazebo.key | apt-key add -
-        add-apt-repository "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main"
+        $(extra)
         apt-get install $(cat ./requirements.apt) -y
+      working-directory: ${{ matrix.plugin }}
+      env:
+        extra: |
+          'curl -fsSL http://packages.osrfoundation.org/gazebo.key | apt-key add - &&\
+          add-apt-repository "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main"'
 
 
     - name: SonarQube Scan
@@ -46,7 +68,7 @@ jobs:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONAR_HOST_URL: https://sonarqube.aws.cloud.mov.ai
       with:
-        projectBaseDir: ./
+        projectBaseDir: ./${{ matrix.plugin }}
         args: >
           -Dsonar.organization=MOV-AI
           -Dsonar.projectKey=${{ github.event.repository.name }}
@@ -65,19 +87,19 @@ jobs:
     
     - name: Build
       run: |
-        cd ${{ matrix.plugin }}
         mkdir build
         cd build
         cmake .. -DCMAKE_PREFIX_PATH=/usr/lib/x86_64-linux-gnu/
         make
+      working-directory: ${{ matrix.plugin }}
 
     - name: Pack
-      run: |
-        cd ${{ matrix.plugin }}
-        dch -v 1.0.0-1 -b -D "UNRELEASED" "bump version"
+      run: | 
+        dch -v ${{ steps.vars-after-raise.outputs.pkg_version }} -b -D "UNRELEASED" "bump version"
         dpkg-buildpackage -b && \
         mkdir artifacts && \
         cp ../*.deb artifacts
+      working-directory: ${{ matrix.plugin }}
 
     - name: Archive binary
       uses: actions/upload-artifact@v2
@@ -86,6 +108,5 @@ jobs:
         path: ${{ matrix.plugin }}/artifacts/*
 
     - name: Print generated packages
-      run: |
-        cd ${{ matrix.plugin }}
-        ls -la artifacts
+      run: ls -la artifacts
+      working-directory: ${{ matrix.plugin }}
