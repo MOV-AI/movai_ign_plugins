@@ -32,6 +32,13 @@ jobs:
         fetch-depth: 0
         submodules: recursive
 
+    - name: Install requirements
+      run: |
+        cd ${{ matrix.plugin }}
+        curl -fsSL http://packages.osrfoundation.org/gazebo.key | apt-key add -
+        add-apt-repository "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main"
+        apt-get install $(cat ./requirements.apt) -y
+
 
     - name: SonarQube Scan
       uses: SonarSource/sonarqube-scan-action@v1.0.0
