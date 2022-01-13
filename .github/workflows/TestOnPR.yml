@@ -88,5 +88,4 @@ jobs:
     - name: Print generated packages
       run: |
         cd ${{ matrix.plugin }}
-        ${{ matrix.plugin }}
         ls -la artifacts
