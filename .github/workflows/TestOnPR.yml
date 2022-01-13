@@ -1,0 +1,87 @@
+name: "CI - On branch dev Push"
+on:
+  pull_request:
+    branches:
+      - dev
+      - main
+    paths-ignore:
+      - '.bumpversion.cfg'
+      - 'setup.py'
+
+env:
+  PROJECT_SRC_DIR: ./
+  PLUGINS: '["world_launcher","duarte"]'
+
+jobs:
+  Build:
+    strategy:
+      matrix:
+        plugin: ${{ fromJSON(env.PLUGINS) }}
+    if: ${{ inputs.release == 'false' }}
+    runs-on: ubuntu-20.04
+    container:
+      image: registry.cloud.mov.ai/devops/ros-buildtools-noetic:latest
+      options: --user root
+      credentials:
+        username: ${{secrets.registry_user}} 
+        password: ${{secrets.registry_password}}
+
+    steps:
+    - name: Checkout    
+      uses: actions/checkout@v2
+      with:
+        # Disabling shallow clone is recommended for improving relevancy of reporting
+        fetch-depth: 0
+        submodules: recursive
+
+
+    - name: SonarQube Scan
+      uses: SonarSource/sonarqube-scan-action@v1.0.0
+      env:
+        SONAR_TOKEN: ${{ secrets.sonar_token }}
+        SONAR_HOST_URL: https://sonarqube.aws.cloud.mov.ai
+      with:
+        projectBaseDir: ./
+        args: >
+          -Dsonar.organization=MOV-AI
+          -Dsonar.projectKey=${{ github.event.repository.name }}
+          -Dsonar.verbose=true
+          -Dsonar.sources=.
+          -Dsonar.scm.provider=git
+          -Dsonar.qualitygate.wait=true
+          -Dsonar.qualitygate.timeout=300
+
+    - name: Link to SonarQube Dashboard
+      shell: bash
+      run: |
+        echo "Please check report here: https://sonarqube.aws.cloud.mov.ai/dashboard?id=${{ github.event.repository.name }}"
+      id: sonar_links
+
+    
+    - name: Build
+      run: |
+        cd ${{ matrix.plugin }}
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_PREFIX_PATH=/usr/lib/x86_64-linux-gnu/
+        make
+
+    - name: Pack
+      run: |
+        cd ${{ matrix.plugin }}
+        dch -v 1.0.0-1 -b -D "UNRELEASED" "bump version"
+        dpkg-buildpackage -b && \
+        mkdir artifacts && \
+        cp ../*.deb artifacts
+
+    - name: Archive binary
+      uses: actions/upload-artifact@v2
+      with:
+        name: packages
+        path: ${{ matrix.plugin }}/artifacts/*
+
+    - name: Print generated packages
+      run: |
+        cd ${{ matrix.plugin }}
+        ${{ matrix.plugin }}
+        ls -la artifacts
