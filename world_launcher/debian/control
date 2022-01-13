@@ -1,0 +1,11 @@
+Source: movai-ign-plugin-world-launcher
+Maintainer: Filipe Almeida<filipe.almeida@mov.ai>
+Section: unknown
+Priority: optional
+Build-Depends: unzip, debhelper (>= 7.4.3)
+Standards-Version: 3.9.1
+
+Package: movai-ign-plugin-world-launcher
+Architecture: all
+Depends: ${misc:Depends}
+Description: Gui plugin used for launching ign gazebo worlds (localy and from Fuel repository)
