@@ -59,7 +59,7 @@ jobs:
       working-directory: ${{ matrix.plugin }}
       env:
         extra: |
-          'curl -fsSL http://packages.osrfoundation.org/gazebo.key | apt-key add - &&
+          extra='curl -fsSL http://packages.osrfoundation.org/gazebo.key | apt-key add - \&&
           add-apt-repository "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main"'
 
 
