@@ -16,7 +16,6 @@ jobs:
     strategy:
       matrix:
         plugin: ${{ fromJSON('["world_launcher","duarte"]') }}
-    if: ${{ inputs.release == 'false' }}
     runs-on: ubuntu-20.04
     container:
       image: registry.cloud.mov.ai/devops/ros-buildtools-noetic:latest
