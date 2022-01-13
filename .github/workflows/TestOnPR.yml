@@ -10,13 +10,12 @@ on:
 
 env:
   PROJECT_SRC_DIR: ./
-  PLUGINS: '["world_launcher","duarte"]'
 
 jobs:
   Build:
     strategy:
       matrix:
-        plugin: ${{ fromJSON(env.PLUGINS) }}
+        plugin: ${{ fromJSON('["world_launcher","duarte"]') }}
     if: ${{ inputs.release == 'false' }}
     runs-on: ubuntu-20.04
     container:
