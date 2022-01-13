@@ -55,6 +55,7 @@ jobs:
       shell: bash
       run: |
         echo $extra > run.bash
+        cat run.bash
         chmod +x run.bash
         ./run.bash
         apt-get install $(cat ./requirements.apt) -y
