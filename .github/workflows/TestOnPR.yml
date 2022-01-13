@@ -13,7 +13,7 @@ jobs:
   Build:
     strategy:
       matrix:
-        plugin: ${{ fromJSON('["world_launcher","duarte"]') }}
+        plugin: ${{ fromJSON('["world_launcher"]') }}
     runs-on: ubuntu-20.04
     container:
       image: registry.cloud.mov.ai/devops/ros-buildtools-noetic:latest
@@ -53,7 +53,7 @@ jobs:
 
     - name: Install requirements
       run: |
-        $(extra)
+        eval "$extra"
         apt-get install $(cat ./requirements.apt) -y
       working-directory: ${{ matrix.plugin }}
       env:
