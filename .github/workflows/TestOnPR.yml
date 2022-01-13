@@ -55,7 +55,7 @@ jobs:
       shell: bash
       run: |
         eval "$extra"
-        apt-get install $(cat ./requirements.apt) -y
+        #apt-get install $(cat ./requirements.apt) -y
       working-directory: ${{ matrix.plugin }}
       env:
         extra: |
