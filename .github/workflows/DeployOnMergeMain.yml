@@ -1,18 +1,18 @@
-name: "CI - On main/dev/release branches"
+name: "Deploy - On branch main/release Push"
 on:
-  pull_request:
+  push:
     branches:
-      - dev
       - main
       - 'releases/**'
+
     paths-ignore:
       - '**/changelog'
 
 jobs:
-  CI:
+  Deploy:
     uses: MOV-AI/.github/.github/workflows/cpp-workflow.yml@feature/add-cpp
     with:
-      deploy: 'false'
+      deploy: 'true'
       components: '["world_launcher"]'
       custom_requirements: curl -fsSL http://packages.osrfoundation.org/gazebo.key | apt-key add - ;add-apt-repository "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main"
     secrets:
@@ -24,4 +24,3 @@ jobs:
       nexus_publisher_password: ${{ secrets.NEXUS_PUBLISHER_PWD }}
       gh_token: ${{ secrets.GITHUB_TOKEN }}
       sonar_token: ${{ secrets.SONAR_TOKEN }}
-      
