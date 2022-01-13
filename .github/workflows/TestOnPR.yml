@@ -52,6 +52,7 @@ jobs:
 
 
     - name: Install requirements
+      shell: bash
       run: |
         eval "$extra"
         apt-get install $(cat ./requirements.apt) -y
