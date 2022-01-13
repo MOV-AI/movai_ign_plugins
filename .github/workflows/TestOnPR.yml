@@ -21,8 +21,8 @@ jobs:
       image: registry.cloud.mov.ai/devops/ros-buildtools-noetic:latest
       options: --user root
       credentials:
-        username: ${{secrets.registry_user}} 
-        password: ${{secrets.registry_password}}
+        username: ${{ secrets.PORTUS_APP_USER }}
+        password: ${{ secrets.PORTUS_APP_TOKEN }}
 
     steps:
     - name: Checkout    
@@ -36,7 +36,7 @@ jobs:
     - name: SonarQube Scan
       uses: SonarSource/sonarqube-scan-action@v1.0.0
       env:
-        SONAR_TOKEN: ${{ secrets.sonar_token }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONAR_HOST_URL: https://sonarqube.aws.cloud.mov.ai
       with:
         projectBaseDir: ./
