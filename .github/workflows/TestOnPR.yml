@@ -10,7 +10,7 @@ on:
 
 jobs:
   CI:
-    uses: MOV-AI/.github/.github/workflows/ros-workflow.yml@feature/add-cpp
+    uses: MOV-AI/.github/.github/workflows/cpp-workflow.yml@feature/add-cpp
     with:
       deploy: 'false'
       components: '["world_launcher"]'
