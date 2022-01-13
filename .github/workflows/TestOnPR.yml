@@ -55,11 +55,11 @@ jobs:
       shell: bash
       run: |
         eval "$extra"
-        #apt-get install $(cat ./requirements.apt) -y
+        apt-get install $(cat ./requirements.apt) -y
       working-directory: ${{ matrix.plugin }}
       env:
         extra: |
-          extra='curl -fsSL http://packages.osrfoundation.org/gazebo.key | apt-key add - \&&
+          'curl -fsSL http://packages.osrfoundation.org/gazebo.key | apt-key add - \&&
           add-apt-repository "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main"'
 
 
