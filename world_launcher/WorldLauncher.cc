@@ -1,20 +1,3 @@
-/*
- * Copyright (C) 2017 Open Source Robotics Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
-
 #include "WorldLauncher.hh"
 #include <ignition/plugin/Register.hh>
 
@@ -74,6 +57,9 @@ void WorldLauncher::LoadConfig(const tinyxml2::XMLElement *_pluginElem)
   // Call the function to Load the FUEL Worlds names
   // Set the default value in the selected world
   SetWorld(this->worldsList[0]);
+
+  // Load the default owner
+  this->OnOwnerSelection(QString::fromStdString(this->ownerName));
 }
 
 /////////////////////////////////////////////////
@@ -99,6 +85,12 @@ void WorldLauncher::SetWorldsList(const QStringList &_worldsList)
 void WorldLauncher::OnOwnerSelection(const QString &_owner)
 {
   this->ownerName = _owner.toStdString();
+  this->loadingStatus = true;
+  this->fuelWorldsList.clear();
+  this->fuelWorldsList.push_back(QString::fromStdString("Loading worlds from Owner. Please wait."));
+  this->FuelWorldsListChanged();
+  this->LoadingStatusChanged();
+  this->LoadFuelList();
 }
 
 /////////////////////////////////////////////////
@@ -106,30 +98,37 @@ void WorldLauncher::OnOwnerSelection(const QString &_owner)
 void WorldLauncher::LoadFuelList()
 {
   std::cout << "Loading worlds from Owner: " + this->ownerName << std::endl;
-  this->fuelWorldsList.clear();
-  // Setup ClientConfig.
-  ignition::fuel_tools::ClientConfig conf;
-  conf.SetUserAgent("ExampleList");
-  // Instantiate the FuelClient object with the configuration.
-  ignition::fuel_tools::FuelClient client(conf);
 
   // For each server available in the server configuration, create a list of worlds available
-  for (const auto &server : client.Config().Servers())
-  {
-    for (auto iter = client.Worlds(server); iter; ++iter)
-    {
-      if (iter->Owner() == this->ownerName)
-      {
-        // Insert the world url to the list in GUI
-        this->fuelWorldsList.push_back(QString::fromStdString(iter->UniqueName()));
-      }
-    }
-  }
-  this->fuelWorldsList.sort(Qt::CaseInsensitive);
-  // Inform GUI a update in the Q_PROPERTY
-  this->FuelWorldsListChanged();
-  SetFuelWorld(this->fuelWorldsList[0]);
-  std::cout << "Finished " << std::endl;
+  // Thread to not block the app
+  std::thread threadLoadFuel([this]
+                             {
+                  // Setup ClientConfig.
+                  ignition::fuel_tools::ClientConfig conf;
+                  conf.SetUserAgent("ExampleList");
+                  // Instantiate the FuelClient object with the configuration.
+                  ignition::fuel_tools::FuelClient client(conf);
+                  auto servers = client.Config().Servers();
+                  this->fuelWorldsList.clear();
+                  for (const auto &server : servers)
+                  {
+                    for (auto iter = client.Worlds(server); iter; ++iter)
+                    {
+                      if (iter->Owner() == this->ownerName)
+                      {
+                        // Insert the world url to the list in GUI
+                        this->fuelWorldsList.push_back(QString::fromStdString(iter->UniqueName()));
+                      }
+                    }
+                  }
+                  this->fuelWorldsList.sort(Qt::CaseInsensitive);
+                  // Inform GUI a update in the Q_PROPERTY
+                  this->FuelWorldsListChanged();
+                  SetFuelWorld(this->fuelWorldsList[0]);
+                  std::cout << "Finished " << std::endl;
+                  this->loadingStatus = false;
+                  this->LoadingStatusChanged(); });
+  threadLoadFuel.detach();
 }
 
 /////////////////////////////////////////////////
@@ -147,6 +146,22 @@ void WorldLauncher::SetFuelWorldsList(const QStringList &_worldsList)
   this->fuelWorldsList = _worldsList;
   this->fuelWorldsList.sort(Qt::CaseInsensitive);
   this->FuelWorldsListChanged();
+}
+
+/////////////////////////////////////////////////
+/// \brief Called by Ignition GUI when QBool is instantiated.
+bool WorldLauncher::LoadingStatus() const
+{
+  return this->loadingStatus;
+}
+
+/////////////////////////////////////////////////
+/// \brief Called by Ignition GUI when QBool is instantiated.
+/// \param[in] _status QBool to update
+void WorldLauncher::SetLoadingStatus(const bool _status)
+{
+  this->loadingStatus = _status;
+  this->LoadingStatusChanged();
 }
 
 /////////////////////////////////////////////////
