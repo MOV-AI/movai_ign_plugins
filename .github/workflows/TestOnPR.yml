@@ -54,10 +54,14 @@ jobs:
     - name: Install requirements
       shell: bash
       run: |
-        echo $extra > run.bash
-        cat run.bash
-        chmod +x run.bash
-        ./run.bash
+        IFS=';' read -r -a array <<< "$extra"
+
+        for element in "${array[@]}"
+        do
+            echo "$element"
+            eval $element
+        done
+        echo "finished now the requirement.apt"
         apt-get install $(cat ./requirements.apt) -y
       working-directory: ${{ matrix.plugin }}
       env:
