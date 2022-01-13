@@ -57,6 +57,9 @@ void WorldLauncher::LoadConfig(const tinyxml2::XMLElement *_pluginElem)
   // Call the function to Load the FUEL Worlds names
   // Set the default value in the selected world
   SetWorld(this->worldsList[0]);
+
+  // Load the default owner
+  this->OnOwnerSelection(QString::fromStdString(this->ownerName));
 }
 
 /////////////////////////////////////////////////
@@ -83,6 +86,9 @@ void WorldLauncher::OnOwnerSelection(const QString &_owner)
 {
   this->ownerName = _owner.toStdString();
   this->loadingStatus = true;
+  this->fuelWorldsList.clear();
+  this->fuelWorldsList.push_back(QString::fromStdString("Loading worlds from Owner. Please wait."));
+  this->FuelWorldsListChanged();
   this->LoadingStatusChanged();
   this->LoadFuelList();
 }
@@ -92,17 +98,18 @@ void WorldLauncher::OnOwnerSelection(const QString &_owner)
 void WorldLauncher::LoadFuelList()
 {
   std::cout << "Loading worlds from Owner: " + this->ownerName << std::endl;
-  // Setup ClientConfig.
 
   // For each server available in the server configuration, create a list of worlds available
   // Thread to not block the app
   std::thread threadLoadFuel([this]
                              {
+                  // Setup ClientConfig.
                   ignition::fuel_tools::ClientConfig conf;
                   conf.SetUserAgent("ExampleList");
                   // Instantiate the FuelClient object with the configuration.
                   ignition::fuel_tools::FuelClient client(conf);
                   auto servers = client.Config().Servers();
+                  this->fuelWorldsList.clear();
                   for (const auto &server : servers)
                   {
                     for (auto iter = client.Worlds(server); iter; ++iter)

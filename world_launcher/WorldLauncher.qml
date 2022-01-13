@@ -14,19 +14,35 @@ import "qrc:/qml"
 GridLayout {
   columns: 1
   columnSpacing: 10
-  rows: 2
+  rows: 3
   rowSpacing: 10
   Layout.minimumWidth: 1000
-  Layout.minimumHeight: 300
+  Layout.minimumHeight: 350
   anchors.fill: parent
   anchors.leftMargin: 10
   anchors.rightMargin: 10
   anchors.bottomMargin: 10
   anchors.topMargin: 10
+  
+  Rectangle {
+    Layout.column: 1
+    Layout.row: 1
+    Layout.fillWidth: true
+    height: 40
+    color: "transparent"
+    Text {
+          id: appName
+          color: "dimgrey"
+          font.pointSize: 24
+          anchors.horizontalCenter: parent.horizontalCenter
+          text: "Mov.Ai Simulator Launcher"
+        }
+  }
+  
 
   TabBar {
     Layout.column: 1
-    Layout.row: 1
+    Layout.row: 2
     id: bar
     TabButton {
       text: "Fuel Worlds"
@@ -40,7 +56,7 @@ GridLayout {
 
   StackLayout {
     Layout.column: 1
-    Layout.row: 2
+    Layout.row: 3
     currentIndex: bar.currentIndex
 
     // FUEL REPOSITORY:
@@ -62,12 +78,13 @@ GridLayout {
           anchors.bottomMargin: 10
           anchors.topMargin: 10
 
-          Label {
+          Text {
             Layout.column: 1
             Layout.row: 1
             id: topicLabel
+            font.pointSize: 12
             color: "dimgrey"
-            text: "Owner: "
+            text: "World Owner: "
           }
 
           TextField {
@@ -92,6 +109,7 @@ GridLayout {
             Layout.column: 1
             Layout.row: 2
             id: fuelText
+            font.pointSize: 12
             color: "dimgrey"
             text: "Fuel World Scene: "
           }
@@ -121,7 +139,7 @@ GridLayout {
               Layout.column: 3
               Layout.row: 2
               id: fuelButton
-              text: qsTr("Fuel Play!")
+              text: qsTr("Start Simulator")
               highlighted: true
               onClicked: {
                 WorldLauncher.OnFuelButton();
@@ -157,6 +175,7 @@ GridLayout {
               Layout.column: 1
               Layout.row: 1
               id: localText
+              font.pointSize: 12
               color: "dimgrey"
               text: "Local World Scene: "
             }
@@ -186,7 +205,7 @@ GridLayout {
                 Layout.column: 3
                 Layout.row: 1
                 id: localButton
-                text: qsTr("Local Play!")
+                text: qsTr("Start Simulator")
                 highlighted: true
                 onClicked: {
                   WorldLauncher.OnButton();
