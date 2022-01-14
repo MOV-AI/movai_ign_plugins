@@ -209,10 +209,11 @@ void WorldLauncher::SetFuelWorld(const QString &_sortType)
 void WorldLauncher::OnButton()
 {
   // Print Full command
-  std::string full_exec = std::string("ign gazebo ") + std::string(this->worldName) + std::string(" -r &");
+  std::string full_exec = std::string("ign gazebo ") + std::string(this->worldName) + std::string(" -r -v 4 &");
   std::cout << "Executing: " + full_exec << std::endl;
   // Launch the selected world
-  system(full_exec.c_str());
+  std::string result = this->StartSimulator(full_exec);
+  std::cout << "Simulation result " + result << std::endl;
 }
 
 /////////////////////////////////////////////////
@@ -220,10 +221,38 @@ void WorldLauncher::OnButton()
 void WorldLauncher::OnFuelButton()
 {
   // Print Full command
-  std::string full_exec = std::string("ign gazebo -r 'https://") + std::string(this->fuelWorldName) + std::string("' &");
+  std::string full_exec = std::string("ign gazebo -r -v 4 'https://") + std::string(this->fuelWorldName) + std::string("' &");
   std::cout << "Downloading and Executing: " + full_exec << std::endl;
   // Launch the selected world
-  system(full_exec.c_str());
+  std::string result = this->StartSimulator(full_exec);
+  std::cout << "Simulation result " + result << std::endl;
+}
+
+/////////////////////////////////////////////////
+/// \brief Starts the simulator using POPEN function.
+/// \param[in] full_exec string to start the POPEN cmd.
+/// \return Returns string of the buffer used.
+std::string WorldLauncher::StartSimulator(const std::string &_cmd)
+{
+  // Launch the selected world using popen
+  std::string full_exec = _cmd + " 2>&1";
+  char buffer[128];
+  std::string result = "";
+
+  FILE *pipe = popen(full_exec.c_str(), "r");
+
+  if (!pipe)
+    return "ERROR";
+
+  while (!feof(pipe))
+  {
+    if (fgets(buffer, 128, pipe) != nullptr)
+    {
+      result += buffer;
+    }
+  }
+  pclose(pipe);
+  return result;
 }
 
 // Register this plugin

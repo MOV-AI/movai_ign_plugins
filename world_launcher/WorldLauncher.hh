@@ -140,6 +140,12 @@ namespace ignition
       /// \param[in] delim char to delimiter the strings separation.
       /// \return Returns a Vector of strings. std::vector<std::string>
       std::vector<std::string> GetWorldList(std::string const &str, const char delim);
+
+      /////////////////////////////////////////////////
+      /// \brief Starts the simulator using POPEN function.
+      /// \param[in] full_exec string to start the POPEN cmd.
+      /// \return Returns string of the buffer used.
+      std::string StartSimulator(const std::string &full_exec);
     };
   }
 }
