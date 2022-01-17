@@ -141,6 +141,7 @@ GridLayout {
               id: fuelButton
               text: qsTr("Start Simulator")
               highlighted: true
+              enabled: WorldLauncher.simulationStatus && !WorldLauncher.loadingStatus
               onClicked: {
                 WorldLauncher.OnFuelButton();
               }
@@ -207,6 +208,7 @@ GridLayout {
                 id: localButton
                 text: qsTr("Start Simulator")
                 highlighted: true
+                enabled: WorldLauncher.simulationStatus
                 onClicked: {
                   WorldLauncher.OnButton();
                 }

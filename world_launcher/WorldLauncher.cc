@@ -165,6 +165,22 @@ void WorldLauncher::SetLoadingStatus(const bool _status)
 }
 
 /////////////////////////////////////////////////
+/// \brief Called by Ignition GUI when QBool is instantiated.
+bool WorldLauncher::SimulationStatus() const
+{
+  return this->simulationStatus;
+}
+
+/////////////////////////////////////////////////
+/// \brief Called by Ignition GUI when QBool is instantiated.
+/// \param[in] _status QBool to update
+void WorldLauncher::SetSimulationStatus(const bool _status)
+{
+  this->simulationStatus = _status;
+  this->SimulationStatusChanged();
+}
+
+/////////////////////////////////////////////////
 /// \brief Function used to split a string by a delimiter character.
 /// \param[in] str std::string to be splited.
 /// \param[in] delim char to delimiter the strings separation.
@@ -235,24 +251,32 @@ void WorldLauncher::OnFuelButton()
 std::string WorldLauncher::StartSimulator(const std::string &_cmd)
 {
   // Launch the selected world using popen
-  std::string full_exec = _cmd + " 2>&1";
-  char buffer[128];
-  std::string result = "";
+  std::string full_exec = _cmd;
+  this->simulationResult = "";
+  std::thread threadStartSimulator([this, full_exec]
+                                   {
+                                char buffer[128];
+                                this->simulationStatus = false;
+                                this->SimulationStatusChanged();
 
-  FILE *pipe = popen(full_exec.c_str(), "r");
+                                FILE *pipe = popen(full_exec.c_str(), "r");
 
-  if (!pipe)
-    return "ERROR";
+                                if (!pipe)
+                                  return "ERROR";
 
-  while (!feof(pipe))
-  {
-    if (fgets(buffer, 128, pipe) != nullptr)
-    {
-      result += buffer;
-    }
-  }
-  pclose(pipe);
-  return result;
+                                while (!feof(pipe))
+                                {
+                                  if (fgets(buffer, 128, pipe) != nullptr)
+                                  {
+                                    this->simulationResult += buffer;
+                                  }
+                                }
+                                pclose(pipe); 
+                                this->simulationStatus = true;
+                                this->SimulationStatusChanged(); 
+                                std::cout << "Simulation result " + this->simulationResult << std::endl; });
+  threadStartSimulator.detach();
+  return this->simulationResult;
 }
 
 // Register this plugin
