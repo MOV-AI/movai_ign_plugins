@@ -91,7 +91,7 @@ GridLayout {
             Layout.column: 2
             Layout.row: 1
             id: topicField
-            text: "openrobotics"
+            text: "movai"
             placeholderText: qsTr("Owner of the Worlds")
             onEditingFinished: {
               WorldLauncher.OnOwnerSelection(text)
@@ -141,7 +141,7 @@ GridLayout {
               id: fuelButton
               text: qsTr("Start Simulator")
               highlighted: true
-              enabled: WorldLauncher.simulationStatus && !WorldLauncher.loadingStatus
+              enabled: WorldLauncher.simulationStatus && !WorldLauncher.loadingStatus && WorldLauncher.validFuelWorld
               onClicked: {
                 WorldLauncher.OnFuelButton();
               }

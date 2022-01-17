@@ -44,6 +44,13 @@ namespace ignition
                   WRITE SetSimulationStatus
                       NOTIFY SimulationStatusChanged)
 
+      /// \brief Valid world Fuel List GUI QT object.
+      Q_PROPERTY(
+          bool validFuelWorld
+              READ ValidFuelWorld
+                  WRITE SetValidFuelWorld
+                      NOTIFY ValidFuelWorldChanged)
+
       /// \brief Constructor.
     public:
       WorldLauncher();
@@ -93,6 +100,15 @@ namespace ignition
       /// \param[in] _status QBool to update
       Q_INVOKABLE void SetSimulationStatus(const bool _status);
 
+      /////////////////////////////////////////////////
+      /// \brief Called by Ignition GUI when QBool is instantiated.
+      Q_INVOKABLE bool ValidFuelWorld() const;
+
+      /////////////////////////////////////////////////
+      /// \brief Called by Ignition GUI when QBool is instantiated.
+      /// \param[in] _status QBool to update
+      Q_INVOKABLE void SetValidFuelWorld(const bool _status);
+
       /// \brief Selected local world file.
       std::string worldName{"empty.sdf"};
 
@@ -100,7 +116,7 @@ namespace ignition
       std::string fuelWorldName{"empty"};
 
       /// \brief Selected Owner of worlds on Fuel.
-      std::string ownerName{"openrobotics"};
+      std::string ownerName{"movai"};
 
       std::string simulationResult{""};
 
@@ -116,6 +132,9 @@ namespace ignition
       /// \brief Status of Simulation.
       bool simulationStatus{true};
 
+      /// \brief Valid world list from Fuel.
+      bool validFuelWorld{false};
+
     signals:
       /// \brief Notify that the worlds list has changed
       void WorldsListChanged();
@@ -128,6 +147,9 @@ namespace ignition
 
       /// \brief Notify that the Simulation status has changed
       void SimulationStatusChanged();
+
+      /// \brief Notify that the Simulation status has changed
+      void ValidFuelWorldChanged();
 
     protected slots:
       /////////////////////////////////////////////////
