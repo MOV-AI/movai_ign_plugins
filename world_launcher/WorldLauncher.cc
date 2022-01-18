@@ -26,37 +26,62 @@ void WorldLauncher::LoadConfig(const tinyxml2::XMLElement *_pluginElem)
     return;
 
   // Get the Local resource var
-  char *resources_path;
+  char const *resources_path = getenv("IGN_GAZEBO_RESOURCE_PATH");
   std::vector<std::string> seglist;
-  resources_path = getenv("IGN_GAZEBO_RESOURCE_PATH");
-  std::string resources_path_string(resources_path);
-  // Separate all the directories paths into a path vector
-  seglist = GetWorldList(resources_path_string, ':');
 
-  for (size_t i = 0; i < seglist.size(); i++)
+  // Check if the IGN_GAZEBO_RESOURCE_PATH is not empty
+  if (resources_path != NULL)
   {
-    // Uses only the worlds path and ignore the models path
-    std::size_t found = seglist[i].find("world");
-    if (found != std::string::npos)
+    std::string resources_path_string(resources_path);
+    // Separate all the directories paths into a path vector
+    seglist = GetWorldList(resources_path_string, ':');
+
+    for (size_t i = 0; i < seglist.size(); i++)
     {
-      // Search for each world file in this folder and create a list with the world names
-      for (common::DirIter file(seglist[i]); file != common::DirIter(); ++file)
+      // Uses only the worlds path and ignore the models path
+      std::size_t found = seglist[i].find("world");
+      if (found != std::string::npos)
       {
-        std::vector<std::string> worldNameList;
-        std::string currentPath(*file);
-        // Get the world name file
-        worldNameList = GetWorldList(currentPath, '/');
-        // Create the List to show to the User in the GUI
-        this->worldsList.push_back(QString::fromStdString(worldNameList.back()));
+        // Search for each world file in this folder and create a list with the world names
+        for (common::DirIter file(seglist[i]); file != common::DirIter(); ++file)
+        {
+          std::vector<std::string> worldNameList;
+          std::string currentPath(*file);
+          // Get the world name file
+          worldNameList = GetWorldList(currentPath, '/');
+          // Create the List to show to the User in the GUI
+          this->worldsList.push_back(QString::fromStdString(worldNameList.back()));
+        }
       }
     }
+    // Check if it found worlds
+    if (this->worldsList.isEmpty())
+    {
+      this->worldsList.push_back(QString::fromStdString("There is no local worlds available"));
+      //  Blocks the Start Button
+      this->validLocalWorld = false;
+      this->ValidLocalWorldChanged();
+    }
+    else
+    {
+      this->worldsList.sort(Qt::CaseInsensitive);
+      // Set the default value in the selected world
+      SetWorld(this->worldsList[0]);
+      // unblocks the Start Button
+      this->validLocalWorld = true;
+      this->ValidLocalWorldChanged();
+    }
   }
-  this->worldsList.sort(Qt::CaseInsensitive);
+  else
+  {
+    this->worldsList.push_back(QString::fromStdString("IGN_GAZEBO_RESOURCE_PATH is empty"));
+    //  Blocks the Start Button
+    this->validLocalWorld = false;
+    this->ValidLocalWorldChanged();
+  }
+
   // Inform GUI a update in the Q_PROPERTY
   this->WorldsListChanged();
-  // Call the function to Load the FUEL Worlds names
-  // Set the default value in the selected world
-  SetWorld(this->worldsList[0]);
 
   // Load the default owner
   this->OnOwnerSelection(QString::fromStdString(this->ownerName));
@@ -208,6 +233,22 @@ void WorldLauncher::SetValidFuelWorld(const bool _status)
 {
   this->validFuelWorld = _status;
   this->ValidFuelWorldChanged();
+}
+
+/////////////////////////////////////////////////
+/// \brief Called by Ignition GUI when QBool is instantiated.
+bool WorldLauncher::ValidLocalWorld() const
+{
+  return this->validLocalWorld;
+}
+
+/////////////////////////////////////////////////
+/// \brief Called by Ignition GUI when QBool is instantiated.
+/// \param[in] _status QBool to update
+void WorldLauncher::SetValidLocalWorld(const bool _status)
+{
+  this->validLocalWorld = _status;
+  this->ValidLocalWorldChanged();
 }
 
 /////////////////////////////////////////////////
