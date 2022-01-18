@@ -57,7 +57,7 @@ void WorldLauncher::LoadConfig(const tinyxml2::XMLElement *_pluginElem)
     // Check if it found worlds
     if (this->worldsList.isEmpty())
     {
-      this->worldsList.push_back(QString::fromStdString("There is no local worlds available"));
+      this->worldsList.push_back(QString::fromStdString("There are no local worlds available"));
       //  Blocks the Start Button
       this->validLocalWorld = false;
       this->ValidLocalWorldChanged();
