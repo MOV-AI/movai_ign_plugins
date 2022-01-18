@@ -316,6 +316,18 @@ void WorldLauncher::OnFuelButton()
 }
 
 /////////////////////////////////////////////////
+/// \brief Called by Ignition GUI when click on the start button.
+void WorldLauncher::OnCreateButton()
+{
+  // Print Full command
+  std::string full_exec = std::string("ign gazebo -v4 &");
+  std::cout << "Empty World " << std::endl;
+  // Launch the selected world
+  std::string result = this->StartSimulator(full_exec);
+  std::cout << "Logs result " + result << std::endl;
+}
+
+/////////////////////////////////////////////////
 /// \brief Starts the simulator using POPEN function.
 /// \param[in] _cmd string to start the POPEN cmd.
 /// \return Returns string of the buffer used.

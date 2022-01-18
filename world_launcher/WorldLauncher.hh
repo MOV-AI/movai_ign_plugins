@@ -187,6 +187,10 @@ namespace ignition
       void OnFuelButton();
 
       /////////////////////////////////////////////////
+      /// \brief Called by Ignition GUI when click on the Create world button.
+      void OnCreateButton();
+
+      /////////////////////////////////////////////////
       /// \brief Called by Ignition GUI when finished to filed this textbox.
       /// \param[in] _owner the selected string in the textbox.
       void OnOwnerSelection(const QString &_owner);

@@ -163,7 +163,7 @@ GridLayout {
           GridLayout {
             columns: 3
             columnSpacing: 10
-            rows: 1
+            rows: 2
             rowSpacing: 10
             Layout.minimumWidth: 1000
             Layout.minimumHeight: 300
@@ -172,9 +172,30 @@ GridLayout {
             anchors.rightMargin: 10
             anchors.bottomMargin: 10
             anchors.topMargin: 10
-            Text {
+
+            Button {
+              Layout.alignment: Qt.AlignCenter
+              Layout.minimumWidth: 150
+              Layout.preferredHeight: 50
               Layout.column: 1
               Layout.row: 1
+              id: createButton
+              text: qsTr("Create new World")
+              highlighted: true
+              enabled: WorldLauncher.simulationStatus
+              onClicked: {
+                WorldLauncher.OnCreateButton();
+              }
+              ToolTip.visible: hovered
+              ToolTip.delay: tooltipDelay
+              ToolTip.timeout: tooltipTimeout
+              ToolTip.text: qsTr("Start empty World scene")
+            }
+
+
+            Text {
+              Layout.column: 1
+              Layout.row: 2
               id: localText
               font.pointSize: 12
               color: "dimgrey"
@@ -183,7 +204,7 @@ GridLayout {
 
             ComboBox {
               Layout.column: 2
-              Layout.row: 1
+              Layout.row: 2
               Layout.minimumWidth: 600
               id: localCombo
               model: WorldLauncher.worldsList
@@ -204,7 +225,7 @@ GridLayout {
                 Layout.minimumWidth: 150
                 Layout.preferredHeight: 50
                 Layout.column: 3
-                Layout.row: 1
+                Layout.row: 2
                 id: localButton
                 text: qsTr("Start Simulator")
                 highlighted: true
