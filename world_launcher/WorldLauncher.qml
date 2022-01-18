@@ -208,7 +208,7 @@ GridLayout {
                 id: localButton
                 text: qsTr("Start Simulator")
                 highlighted: true
-                enabled: WorldLauncher.simulationStatus
+                enabled: WorldLauncher.simulationStatus && WorldLauncher.validLocalWorld
                 onClicked: {
                   WorldLauncher.OnButton();
                 }
