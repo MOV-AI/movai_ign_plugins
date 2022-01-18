@@ -26,37 +26,62 @@ void WorldLauncher::LoadConfig(const tinyxml2::XMLElement *_pluginElem)
     return;
 
   // Get the Local resource var
-  char *resources_path;
+  char const *resources_path = getenv("IGN_GAZEBO_RESOURCE_PATH");
   std::vector<std::string> seglist;
-  resources_path = getenv("IGN_GAZEBO_RESOURCE_PATH");
-  std::string resources_path_string(resources_path);
-  // Separate all the directories paths into a path vector
-  seglist = GetWorldList(resources_path_string, ':');
 
-  for (size_t i = 0; i < seglist.size(); i++)
+  // Check if the IGN_GAZEBO_RESOURCE_PATH is not empty
+  if (resources_path != NULL)
   {
-    // Uses only the worlds path and ignore the models path
-    std::size_t found = seglist[i].find("world");
-    if (found != std::string::npos)
+    std::string resources_path_string(resources_path);
+    // Separate all the directories paths into a path vector
+    seglist = GetWorldList(resources_path_string, ':');
+
+    for (size_t i = 0; i < seglist.size(); i++)
     {
-      // Search for each world file in this folder and create a list with the world names
-      for (common::DirIter file(seglist[i]); file != common::DirIter(); ++file)
+      // Uses only the worlds path and ignore the models path
+      std::size_t found = seglist[i].find("world");
+      if (found != std::string::npos)
       {
-        std::vector<std::string> worldNameList;
-        std::string currentPath(*file);
-        // Get the world name file
-        worldNameList = GetWorldList(currentPath, '/');
-        // Create the List to show to the User in the GUI
-        this->worldsList.push_back(QString::fromStdString(worldNameList.back()));
+        // Search for each world file in this folder and create a list with the world names
+        for (common::DirIter file(seglist[i]); file != common::DirIter(); ++file)
+        {
+          std::vector<std::string> worldNameList;
+          std::string currentPath(*file);
+          // Get the world name file
+          worldNameList = GetWorldList(currentPath, '/');
+          // Create the List to show to the User in the GUI
+          this->worldsList.push_back(QString::fromStdString(worldNameList.back()));
+        }
       }
     }
+    // Check if it found worlds
+    if (this->worldsList.isEmpty())
+    {
+      this->worldsList.push_back(QString::fromStdString("There are no local worlds available"));
+      //  Blocks the Start Button
+      this->validLocalWorld = false;
+      this->ValidLocalWorldChanged();
+    }
+    else
+    {
+      this->worldsList.sort(Qt::CaseInsensitive);
+      // Set the default value in the selected world
+      SetWorld(this->worldsList[0]);
+      // unblocks the Start Button
+      this->validLocalWorld = true;
+      this->ValidLocalWorldChanged();
+    }
   }
-  this->worldsList.sort(Qt::CaseInsensitive);
+  else
+  {
+    this->worldsList.push_back(QString::fromStdString("IGN_GAZEBO_RESOURCE_PATH is empty"));
+    //  Blocks the Start Button
+    this->validLocalWorld = false;
+    this->ValidLocalWorldChanged();
+  }
+
   // Inform GUI a update in the Q_PROPERTY
   this->WorldsListChanged();
-  // Call the function to Load the FUEL Worlds names
-  // Set the default value in the selected world
-  SetWorld(this->worldsList[0]);
 
   // Load the default owner
   this->OnOwnerSelection(QString::fromStdString(this->ownerName));
@@ -103,31 +128,45 @@ void WorldLauncher::LoadFuelList()
   // Thread to not block the app
   std::thread threadLoadFuel([this]
                              {
-                  // Setup ClientConfig.
-                  ignition::fuel_tools::ClientConfig conf;
-                  conf.SetUserAgent("ExampleList");
-                  // Instantiate the FuelClient object with the configuration.
-                  ignition::fuel_tools::FuelClient client(conf);
-                  auto servers = client.Config().Servers();
-                  this->fuelWorldsList.clear();
-                  for (const auto &server : servers)
-                  {
-                    for (auto iter = client.Worlds(server); iter; ++iter)
-                    {
-                      if (iter->Owner() == this->ownerName)
-                      {
-                        // Insert the world url to the list in GUI
-                        this->fuelWorldsList.push_back(QString::fromStdString(iter->UniqueName()));
-                      }
-                    }
-                  }
-                  this->fuelWorldsList.sort(Qt::CaseInsensitive);
-                  // Inform GUI a update in the Q_PROPERTY
-                  this->FuelWorldsListChanged();
-                  SetFuelWorld(this->fuelWorldsList[0]);
-                  std::cout << "Finished " << std::endl;
-                  this->loadingStatus = false;
-                  this->LoadingStatusChanged(); });
+                               // Setup ClientConfig.
+                               ignition::fuel_tools::ClientConfig conf;
+                               conf.SetUserAgent("ExampleList");
+                               // Instantiate the FuelClient object with the configuration.
+                               ignition::fuel_tools::FuelClient client(conf);
+                               auto servers = client.Config().Servers();
+                               this->fuelWorldsList.clear();
+                               for (const auto &server : servers)
+                               {
+                                 for (auto iter = client.Worlds(server); iter; ++iter)
+                                 {
+                                   if (iter->Owner() == this->ownerName)
+                                   {
+                                     // Insert the world url to the list in GUI
+                                     this->fuelWorldsList.push_back(QString::fromStdString(iter->UniqueName()));
+                                   }
+                                 }
+                               }
+                              //  Check if there is worlds of this owner in FUEL
+                               if (this->fuelWorldsList.isEmpty())
+                               {
+                                 this->fuelWorldsList.push_back(QString::fromStdString("This Owner does not have worlds on Fuel available"));
+                                //  Blocks the Start Button
+                                 this->validFuelWorld = false;
+                                 this->ValidFuelWorldChanged();
+                               }
+                               else
+                               {
+                                //  Sort by name
+                                 this->fuelWorldsList.sort(Qt::CaseInsensitive);
+                                 SetFuelWorld(this->fuelWorldsList[0]);
+                                 this->validFuelWorld = true;
+                                 this->ValidFuelWorldChanged();
+                               }
+                               // Inform GUI a update in the Q_PROPERTY
+                               this->FuelWorldsListChanged();
+                               this->loadingStatus = false;
+                               this->LoadingStatusChanged();
+                               std::cout << "Finished " << std::endl; });
   threadLoadFuel.detach();
 }
 
@@ -162,6 +201,54 @@ void WorldLauncher::SetLoadingStatus(const bool _status)
 {
   this->loadingStatus = _status;
   this->LoadingStatusChanged();
+}
+
+/////////////////////////////////////////////////
+/// \brief Called by Ignition GUI when QBool is instantiated.
+bool WorldLauncher::SimulationStatus() const
+{
+  return this->simulationStatus;
+}
+
+/////////////////////////////////////////////////
+/// \brief Called by Ignition GUI when QBool is instantiated.
+/// \param[in] _status QBool to update
+void WorldLauncher::SetSimulationStatus(const bool _status)
+{
+  this->simulationStatus = _status;
+  this->SimulationStatusChanged();
+}
+
+/////////////////////////////////////////////////
+/// \brief Called by Ignition GUI when QBool is instantiated.
+bool WorldLauncher::ValidFuelWorld() const
+{
+  return this->validFuelWorld;
+}
+
+/////////////////////////////////////////////////
+/// \brief Called by Ignition GUI when QBool is instantiated.
+/// \param[in] _status QBool to update
+void WorldLauncher::SetValidFuelWorld(const bool _status)
+{
+  this->validFuelWorld = _status;
+  this->ValidFuelWorldChanged();
+}
+
+/////////////////////////////////////////////////
+/// \brief Called by Ignition GUI when QBool is instantiated.
+bool WorldLauncher::ValidLocalWorld() const
+{
+  return this->validLocalWorld;
+}
+
+/////////////////////////////////////////////////
+/// \brief Called by Ignition GUI when QBool is instantiated.
+/// \param[in] _status QBool to update
+void WorldLauncher::SetValidLocalWorld(const bool _status)
+{
+  this->validLocalWorld = _status;
+  this->ValidLocalWorldChanged();
 }
 
 /////////////////////////////////////////////////
@@ -230,29 +317,39 @@ void WorldLauncher::OnFuelButton()
 
 /////////////////////////////////////////////////
 /// \brief Starts the simulator using POPEN function.
-/// \param[in] full_exec string to start the POPEN cmd.
+/// \param[in] _cmd string to start the POPEN cmd.
 /// \return Returns string of the buffer used.
 std::string WorldLauncher::StartSimulator(const std::string &_cmd)
 {
-  // Launch the selected world using popen
-  std::string full_exec = _cmd + " 2>&1";
-  char buffer[128];
-  std::string result = "";
+  std::string full_exec = _cmd;
+  this->simulationResult = "";
+  // Start a thread to avoid block the app during the Simulation
+  std::thread threadStartSimulator([this, full_exec]
+                                   {
+                                char buffer[128];
+                                // Blocks the Start button to avoid duplicated simulations
+                                this->simulationStatus = false;
+                                this->SimulationStatusChanged();
+                                // Launch the selected world using popen
+                                FILE *processSim = popen(full_exec.c_str(), "r");
 
-  FILE *pipe = popen(full_exec.c_str(), "r");
-
-  if (!pipe)
-    return "ERROR";
-
-  while (!feof(pipe))
-  {
-    if (fgets(buffer, 128, pipe) != nullptr)
-    {
-      result += buffer;
-    }
-  }
-  pclose(pipe);
-  return result;
+                                if (!processSim)
+                                  return "ERROR";
+                                // Collect the results of the simulation
+                                while (!feof(processSim))
+                                {
+                                  if (fgets(buffer, 128, processSim) != nullptr)
+                                  {
+                                    this->simulationResult += buffer;
+                                  }
+                                }
+                                pclose(processSim);
+                                // Unblock the Start button
+                                this->simulationStatus = true;
+                                this->SimulationStatusChanged(); 
+                                std::cout << "Simulation result " + this->simulationResult << std::endl; });
+  threadStartSimulator.detach();
+  return this->simulationResult;
 }
 
 // Register this plugin
