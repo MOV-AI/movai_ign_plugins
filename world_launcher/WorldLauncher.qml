@@ -16,7 +16,7 @@ GridLayout {
   columnSpacing: 10
   rows: 3
   rowSpacing: 10
-  Layout.minimumWidth: 1000
+  Layout.minimumWidth: 1050
   Layout.minimumHeight: 350
   anchors.fill: parent
   anchors.leftMargin: 10
@@ -70,7 +70,7 @@ GridLayout {
           columnSpacing: 10
           rows: 2
           rowSpacing: 10
-          Layout.minimumWidth: 1000
+          Layout.minimumWidth: 1050
           Layout.minimumHeight: 300
           anchors.fill: parent
           anchors.leftMargin: 10
@@ -132,25 +132,39 @@ GridLayout {
               ToolTip.text: qsTr("Fuel World Scene names available")
             }
 
-            Button {
-              Layout.alignment: Qt.AlignCenter
-              Layout.minimumWidth: 150
-              Layout.preferredHeight: 50
+            RowLayout {
               Layout.column: 3
               Layout.row: 2
-              id: fuelButton
-              text: qsTr("Start Simulator")
-              highlighted: true
-              enabled: WorldLauncher.simulationStatus && !WorldLauncher.loadingStatus && WorldLauncher.validFuelWorld
-              onClicked: {
-                WorldLauncher.OnFuelButton();
-              }
-              ToolTip.visible: hovered
-              ToolTip.delay: tooltipDelay
-              ToolTip.timeout: tooltipTimeout
-              ToolTip.text: qsTr("Start the world scene simulation")
-            }
 
+              RoundButton {
+                text: "\u21bb"
+                Material.background: Material.primary
+                onClicked: {
+                  WorldLauncher.OnOwnerSelection(topicField.text);
+                }
+                ToolTip.visible: hovered
+                ToolTip.delay: tooltipDelay
+                ToolTip.timeout: tooltipTimeout
+                ToolTip.text: qsTr("Refresh World list")
+              }
+
+              Button {
+                Layout.alignment: Qt.AlignCenter
+                Layout.minimumWidth: 150
+                Layout.preferredHeight: 50
+                id: fuelButton
+                text: qsTr("Start Simulator")
+                highlighted: true
+                enabled: WorldLauncher.simulationStatus && !WorldLauncher.loadingStatus && WorldLauncher.validFuelWorld
+                onClicked: {
+                  WorldLauncher.OnFuelButton();
+                }
+                ToolTip.visible: hovered
+                ToolTip.delay: tooltipDelay
+                ToolTip.timeout: tooltipTimeout
+                ToolTip.text: qsTr("Start the world scene simulation")
+              }
+            }
           }
         }
       }
@@ -165,7 +179,7 @@ GridLayout {
             columnSpacing: 10
             rows: 2
             rowSpacing: 10
-            Layout.minimumWidth: 1000
+            Layout.minimumWidth: 1050
             Layout.minimumHeight: 300
             anchors.fill: parent
             anchors.leftMargin: 10
@@ -220,29 +234,42 @@ GridLayout {
                 ToolTip.text: qsTr("Local World Scene names available")
               }
 
-              Button {
-                Layout.alignment: Qt.AlignCenter
-                Layout.minimumWidth: 150
-                Layout.preferredHeight: 50
+              RowLayout {
                 Layout.column: 3
                 Layout.row: 2
-                id: localButton
-                text: qsTr("Start Simulator")
-                highlighted: true
-                enabled: WorldLauncher.simulationStatus && WorldLauncher.validLocalWorld
-                onClicked: {
-                  WorldLauncher.OnButton();
-                }
-                ToolTip.visible: hovered
-                ToolTip.delay: tooltipDelay
-                ToolTip.timeout: tooltipTimeout
-                ToolTip.text: qsTr("Start the world scene simulation")
-              }
 
+                RoundButton {
+                  text: "\u21bb"
+                  Material.background: Material.primary
+                  onClicked: {
+                    WorldLauncher.LoadLocalList();
+                  }
+                  ToolTip.visible: hovered
+                  ToolTip.delay: tooltipDelay
+                  ToolTip.timeout: tooltipTimeout
+                  ToolTip.text: qsTr("Refresh list of Worlds")
+                }
+
+                Button {
+                  Layout.alignment: Qt.AlignCenter
+                  Layout.minimumWidth: 150
+                  Layout.preferredHeight: 50
+                  id: localButton
+                  text: qsTr("Start Simulator")
+                  highlighted: true
+                  enabled: WorldLauncher.simulationStatus && WorldLauncher.validLocalWorld
+                  onClicked: {
+                    WorldLauncher.OnButton();
+                  }
+                  ToolTip.visible: hovered
+                  ToolTip.delay: tooltipDelay
+                  ToolTip.timeout: tooltipTimeout
+                  ToolTip.text: qsTr("Start the world scene simulation")
+                }
+              }
             }
           }
         }
       }
-
     }
 
