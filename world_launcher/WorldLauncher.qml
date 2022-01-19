@@ -23,7 +23,7 @@ GridLayout {
   anchors.rightMargin: 10
   anchors.bottomMargin: 10
   anchors.topMargin: 10
-  
+
   Rectangle {
     Layout.column: 1
     Layout.row: 1
@@ -31,14 +31,14 @@ GridLayout {
     height: 40
     color: "transparent"
     Text {
-          id: appName
-          color: "dimgrey"
-          font.pointSize: 24
-          anchors.horizontalCenter: parent.horizontalCenter
-          text: "MovAi Simulator Launcher"
-        }
+      id: appName
+      color: "dimgrey"
+      font.pointSize: 24
+      anchors.horizontalCenter: parent.horizontalCenter
+      text: "MovAi Simulator Launcher"
+    }
   }
-  
+
 
   TabBar {
     Layout.column: 1
@@ -247,7 +247,7 @@ GridLayout {
                   ToolTip.visible: hovered
                   ToolTip.delay: tooltipDelay
                   ToolTip.timeout: tooltipTimeout
-                  ToolTip.text: qsTr("Refresh list of Worlds")
+                  ToolTip.text: qsTr("Refresh World list")
                 }
 
                 Button {
