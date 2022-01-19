@@ -320,7 +320,7 @@ void WorldLauncher::OnFuelButton()
 void WorldLauncher::OnCreateButton()
 {
   // Print Full command
-  std::string full_exec = std::string("ign gazebo -v4 &");
+  std::string full_exec = std::string("ign gazebo empty.sdf -v4 &");
   std::cout << "Empty World " << std::endl;
   // Launch the selected world
   std::string result = this->StartSimulator(full_exec);
