@@ -2,5 +2,6 @@
 <RCC version="1.0">
   <qresource prefix="WorldLauncher/">
     <file>WorldLauncher.qml</file>
+    <file>logo-new.png</file>
   </qresource>
 </RCC>
