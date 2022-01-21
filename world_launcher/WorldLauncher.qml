@@ -49,7 +49,7 @@ GridLayout {
             color: "dimgrey"
             font.pointSize: 24
             anchors.horizontalCenter: parent.horizontalCenter
-            text: "MovAi Simulator Launcher"
+            text: "MOV.AI Simulator Launcher"
           }
           Image {
             Layout.column: 3
