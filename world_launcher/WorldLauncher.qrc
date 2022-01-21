@@ -2,5 +2,6 @@
 <RCC version="1.0">
   <qresource prefix="WorldLauncher/">
     <file>WorldLauncher.qml</file>
+    <file>images/movai-logo.png</file>
   </qresource>
 </RCC>

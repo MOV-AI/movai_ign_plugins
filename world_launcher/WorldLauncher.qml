@@ -30,12 +30,37 @@ GridLayout {
     Layout.fillWidth: true
     height: 40
     color: "transparent"
-    Text {
-      id: appName
-      color: "dimgrey"
-      font.pointSize: 24
-      anchors.horizontalCenter: parent.horizontalCenter
-      text: "MovAi Simulator Launcher"
+
+    GridLayout {
+          columns: 3
+          columnSpacing: 10
+          rows: 1
+          rowSpacing: 10
+          Layout.minimumWidth: 1050
+          Layout.minimumHeight: 300
+          anchors.fill: parent
+          anchors.leftMargin: 10
+          anchors.rightMargin: 10
+          anchors.bottomMargin: 10
+          anchors.topMargin: 10
+          Text {
+            Layout.column: 2
+            id: appName
+            color: "dimgrey"
+            font.pointSize: 24
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: "MovAi Simulator Launcher"
+          }
+          Image {
+            Layout.column: 3
+            Layout.alignment: Qt.AlignRight
+            fillMode: Image.Pad
+            horizontalAlignment: Image.AlignHCenter
+            verticalAlignment: Image.AlignVCenter
+            source: "images/movai-logo.png"
+            sourceSize.width: 150;
+            sourceSize.height: 70;
+          }
     }
   }
 
