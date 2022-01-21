@@ -57,7 +57,7 @@ GridLayout {
             fillMode: Image.Pad
             horizontalAlignment: Image.AlignHCenter
             verticalAlignment: Image.AlignVCenter
-            source: "logo-new.png"
+            source: "images/movai-logo.png"
             sourceSize.width: 150;
             sourceSize.height: 70;
           }
