@@ -25,30 +25,71 @@ void WorldLauncher::LoadConfig(const tinyxml2::XMLElement *_pluginElem)
   if (!_pluginElem)
     return;
 
+  // Load local world list
+  this->LoadLocalList();
+
+  // Load the default owner and Fuel world list
+  this->OnOwnerSelection(QString::fromStdString(this->ownerName));
+}
+
+/////////////////////////////////////////////////
+/// \brief Called by Ignition GUI when QStringList is instantiated.
+QStringList WorldLauncher::WorldsList() const
+{
+  return this->worldsList;
+}
+
+/////////////////////////////////////////////////
+/// \brief Called by Ignition GUI when QStringList is instantiated.
+/// \param[in] _worldsList QStringList to update
+void WorldLauncher::SetWorldsList(const QStringList &_worldsList)
+{
+  this->worldsList = _worldsList;
+  this->worldsList.sort(Qt::CaseInsensitive);
+  this->WorldsListChanged();
+}
+
+/////////////////////////////////////////////////
+/// \brief Called by Ignition GUI when finished to filed this textbox.
+/// \param[in] _owner the selected string in the textbox.
+void WorldLauncher::OnOwnerSelection(const QString &_owner)
+{
+  this->ownerName = _owner.toStdString();
+  this->loadingStatus = true;
+  this->fuelWorldsList.clear();
+  this->fuelWorldsList.push_back(QString::fromStdString("Loading worlds from Owner. Please wait."));
+  this->FuelWorldsListChanged();
+  this->LoadingStatusChanged();
+  this->LoadFuelList();
+}
+
+/////////////////////////////////////////////////
+/// \brief Called to search for the Worlds in the Local and create a list of it.
+void WorldLauncher::LoadLocalList()
+{
+  // Clear the list before populate it again
+  this->worldsList.clear();
   // Get the Local resource var
   char const *resources_path = getenv("IGN_GAZEBO_RESOURCE_PATH");
-  std::vector<std::string> seglist;
 
   // Check if the IGN_GAZEBO_RESOURCE_PATH is not empty
   if (resources_path != NULL)
   {
     std::string resources_path_string(resources_path);
     // Separate all the directories paths into a path vector
-    seglist = GetWorldList(resources_path_string, ':');
-
+    std::vector<std::string> seglist = GetWorldList(resources_path_string, ':');
     for (size_t i = 0; i < seglist.size(); i++)
     {
-      // Uses only the worlds path and ignore the models path
-      std::size_t found = seglist[i].find("world");
-      if (found != std::string::npos)
+      // Search for each world file in this folder and create a list with the world names
+      for (common::DirIter file(seglist[i]); file != common::DirIter(); ++file)
       {
-        // Search for each world file in this folder and create a list with the world names
-        for (common::DirIter file(seglist[i]); file != common::DirIter(); ++file)
+        std::string currentPath(*file);
+        // Get the world name file
+        std::vector<std::string> worldNameList = GetWorldList(currentPath, '/');
+        // Uses only the worlds path and ignore the models path
+        std::size_t found = worldNameList.back().find(".sdf");
+        if (found != std::string::npos)
         {
-          std::vector<std::string> worldNameList;
-          std::string currentPath(*file);
-          // Get the world name file
-          worldNameList = GetWorldList(currentPath, '/');
           // Create the List to show to the User in the GUI
           this->worldsList.push_back(QString::fromStdString(worldNameList.back()));
         }
@@ -82,40 +123,6 @@ void WorldLauncher::LoadConfig(const tinyxml2::XMLElement *_pluginElem)
 
   // Inform GUI a update in the Q_PROPERTY
   this->WorldsListChanged();
-
-  // Load the default owner
-  this->OnOwnerSelection(QString::fromStdString(this->ownerName));
-}
-
-/////////////////////////////////////////////////
-/// \brief Called by Ignition GUI when QStringList is instantiated.
-QStringList WorldLauncher::WorldsList() const
-{
-  return this->worldsList;
-}
-
-/////////////////////////////////////////////////
-/// \brief Called by Ignition GUI when QStringList is instantiated.
-/// \param[in] _worldsList QStringList to update
-void WorldLauncher::SetWorldsList(const QStringList &_worldsList)
-{
-  this->worldsList = _worldsList;
-  this->worldsList.sort(Qt::CaseInsensitive);
-  this->WorldsListChanged();
-}
-
-/////////////////////////////////////////////////
-/// \brief Called by Ignition GUI when finished to filed this textbox.
-/// \param[in] _owner the selected string in the textbox.
-void WorldLauncher::OnOwnerSelection(const QString &_owner)
-{
-  this->ownerName = _owner.toStdString();
-  this->loadingStatus = true;
-  this->fuelWorldsList.clear();
-  this->fuelWorldsList.push_back(QString::fromStdString("Loading worlds from Owner. Please wait."));
-  this->FuelWorldsListChanged();
-  this->LoadingStatusChanged();
-  this->LoadFuelList();
 }
 
 /////////////////////////////////////////////////
@@ -313,6 +320,18 @@ void WorldLauncher::OnFuelButton()
   // Launch the selected world
   std::string result = this->StartSimulator(full_exec);
   std::cout << "Simulation result " + result << std::endl;
+}
+
+/////////////////////////////////////////////////
+/// \brief Called by Ignition GUI when click on the start button.
+void WorldLauncher::OnCreateButton()
+{
+  // Print Full command
+  std::string full_exec = std::string("ign gazebo empty.sdf -v4 &");
+  std::cout << "Empty World " << std::endl;
+  // Launch the selected world
+  std::string result = this->StartSimulator(full_exec);
+  std::cout << "Logs result " + result << std::endl;
 }
 
 /////////////////////////////////////////////////

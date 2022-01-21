@@ -179,12 +179,20 @@ namespace ignition
       void LoadFuelList();
 
       /////////////////////////////////////////////////
+      /// \brief Called to search for the Worlds in the Local and create a list of it.
+      void LoadLocalList();
+
+      /////////////////////////////////////////////////
       /// \brief Called by Ignition GUI when click on the start button.
       void OnButton();
 
       /////////////////////////////////////////////////
       /// \brief Called by Ignition GUI when click on the start button.
       void OnFuelButton();
+
+      /////////////////////////////////////////////////
+      /// \brief Called by Ignition GUI when click on the Create world button.
+      void OnCreateButton();
 
       /////////////////////////////////////////////////
       /// \brief Called by Ignition GUI when finished to filed this textbox.
