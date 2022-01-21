@@ -67,6 +67,8 @@ void WorldLauncher::OnOwnerSelection(const QString &_owner)
 /// \brief Called to search for the Worlds in the Local and create a list of it.
 void WorldLauncher::LoadLocalList()
 {
+  // Clear the list before populate it again
+  this->worldsList.clear();
   // Get the Local resource var
   char const *resources_path = getenv("IGN_GAZEBO_RESOURCE_PATH");
 
