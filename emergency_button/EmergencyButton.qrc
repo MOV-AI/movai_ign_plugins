@@ -1,0 +1,7 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+  <qresource prefix="EmergencyButton/">
+    <file>EmergencyButton.qml</file>
+    <file>images/emergency_button.png</file>
+  </qresource>
+</RCC>
