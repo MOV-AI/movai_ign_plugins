@@ -16,7 +16,7 @@ GridLayout {
   columnSpacing: 5
   rows: 3
   rowSpacing: 5
-  Layout.minimumWidth: 950
+  Layout.minimumWidth: 1050
   Layout.minimumHeight: 500
   anchors.fill: parent
   anchors.leftMargin: 10
@@ -36,7 +36,7 @@ GridLayout {
           columnSpacing: 5
           rows: 1
           rowSpacing: 5
-          Layout.minimumWidth: 950
+          Layout.minimumWidth: 1050
           Layout.minimumHeight: 450
           anchors.fill: parent
           anchors.leftMargin: 10
@@ -97,7 +97,7 @@ GridLayout {
             columnSpacing: 10
             rows: 3
             rowSpacing: 5
-            Layout.minimumWidth: 900
+            Layout.minimumWidth: 1000
             Layout.minimumHeight: 250
             anchors.fill: parent
             anchors.leftMargin: 10
@@ -157,7 +157,7 @@ GridLayout {
             ComboBox {
               Layout.column: 2
               Layout.row: 3
-              Layout.minimumWidth: 600
+              Layout.minimumWidth: 700
               id: fuelCombo
               model: WorldLauncher.fuelWorldsList
               currentIndex: 0
@@ -196,7 +196,7 @@ GridLayout {
             Layout.alignment: Qt.AlignCenter
             Layout.fillWidth: true
             Layout.preferredHeight: 50
-            Layout.leftMargin: 20
+            Layout.leftMargin: 40
             Layout.rightMargin: 20
             id: fuelButton
             text: qsTr("Start Simulator")
@@ -227,7 +227,7 @@ GridLayout {
             columnSpacing: 10
             rows: 2
             rowSpacing: 5
-            Layout.minimumWidth: 900
+            Layout.minimumWidth: 1000
             Layout.minimumHeight: 250
             anchors.fill: parent
             anchors.leftMargin: 10
@@ -270,7 +270,7 @@ GridLayout {
             ComboBox {
               Layout.column: 2
               Layout.row: 2
-              Layout.minimumWidth: 600
+              Layout.minimumWidth: 700
               id: localCombo
               model: WorldLauncher.worldsList
               currentIndex: 0
@@ -319,7 +319,7 @@ GridLayout {
             Layout.alignment: Qt.AlignCenter
             Layout.fillWidth: true
             Layout.preferredHeight: 50
-            Layout.leftMargin: 20
+            Layout.leftMargin: 40
             Layout.rightMargin: 20
             id: localButton
             text: qsTr("Start Simulator")
