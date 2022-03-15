@@ -13,11 +13,11 @@ import "qrc:/qml"
 
 GridLayout {
   columns: 1
-  columnSpacing: 10
+  columnSpacing: 5
   rows: 3
-  rowSpacing: 10
-  Layout.minimumWidth: 1050
-  Layout.minimumHeight: 350
+  rowSpacing: 5
+  Layout.minimumWidth: 950
+  Layout.minimumHeight: 500
   anchors.fill: parent
   anchors.leftMargin: 10
   anchors.rightMargin: 10
@@ -33,11 +33,11 @@ GridLayout {
 
     GridLayout {
           columns: 3
-          columnSpacing: 10
+          columnSpacing: 5
           rows: 1
-          rowSpacing: 10
-          Layout.minimumWidth: 1050
-          Layout.minimumHeight: 300
+          rowSpacing: 5
+          Layout.minimumWidth: 950
+          Layout.minimumHeight: 450
           anchors.fill: parent
           anchors.leftMargin: 10
           anchors.rightMargin: 10
@@ -90,65 +90,80 @@ GridLayout {
 
       Rectangle {
         anchors.fill: parent
-        GridLayout {
-          columns: 3
-          columnSpacing: 10
-          rows: 2
-          rowSpacing: 10
-          Layout.minimumWidth: 1050
-          Layout.minimumHeight: 300
-          anchors.fill: parent
-          anchors.leftMargin: 10
-          anchors.rightMargin: 10
-          anchors.bottomMargin: 10
-          anchors.topMargin: 10
-
-          Text {
-            Layout.column: 1
-            Layout.row: 1
-            id: topicLabel
-            font.pointSize: 12
-            color: "dimgrey"
-            text: "World Owner: "
-          }
-
-          TextField {
-            Layout.column: 2
-            Layout.row: 1
-            id: topicField
-            text: "movai"
-            placeholderText: qsTr("Owner of the Worlds")
-            onEditingFinished: {
-              WorldLauncher.OnOwnerSelection(text)
+        ColumnLayout {
+          spacing: 5
+          GridLayout {
+            columns: 3
+            columnSpacing: 10
+            rows: 3
+            rowSpacing: 5
+            Layout.minimumWidth: 900
+            Layout.minimumHeight: 250
+            anchors.fill: parent
+            anchors.leftMargin: 10
+            anchors.rightMargin: 10
+            anchors.bottomMargin: 10
+            anchors.topMargin: 10
+            Text {
+              Layout.column: 1
+              Layout.row: 1
+              id: topicLabel
+              font.pointSize: 12
+              color: "dimgrey"
+              text: "World Owner: "
             }
-          }
-
-          BusyIndicator {
-            Layout.column: 3
-            Layout.row: 1
-            id: loadingIcon
-            running: WorldLauncher.loadingStatus
-          }
-
-          Text {
-            Layout.column: 1
-            Layout.row: 2
-            id: fuelText
-            font.pointSize: 12
-            color: "dimgrey"
-            text: "Fuel World Scene: "
-          }
-
-          ComboBox {
-            Layout.column: 2
-            Layout.row: 2
-            Layout.minimumWidth: 600
-            id: fuelCombo
-            model: WorldLauncher.fuelWorldsList
-            currentIndex: 0
-            onCurrentIndexChanged: {
-              if (currentIndex < 0)
-                return;
+            TextField {
+              Layout.column: 2
+              Layout.row: 1
+              id: topicField
+              text: "movai"
+              placeholderText: qsTr("Owner of the Worlds")
+              onEditingFinished: {
+                WorldLauncher.OnOwnerSelection(text)
+              }
+            }
+            Text {
+              Layout.column: 1
+              Layout.row: 2
+              font.pointSize: 12
+              color: "dimgrey"
+              text: "Render Engine: "
+            }
+            ComboBox {
+              Layout.column: 2
+              Layout.row: 2
+              Layout.minimumWidth: 50
+              id: fuelRenderCombo
+              model: ["ogre2", "ogre"]
+              currentIndex: 0
+              onCurrentIndexChanged: {
+                if (currentIndex < 0)
+                  return;
+                WorldLauncher.SetRenderWorld(textAt(currentIndex));
+              }
+              ToolTip.visible: hovered
+              ToolTip.delay: tooltipDelay
+              ToolTip.timeout: tooltipTimeout
+              ToolTip.text: qsTr("Render Engine that is used by the scene and sensors")
+            }
+            Text {
+              Layout.column: 1
+              Layout.row: 3
+              id: fuelText
+              font.pointSize: 12
+              color: "dimgrey"
+              text: "Fuel World Scene: "
+            }
+            ComboBox {
+              Layout.column: 2
+              Layout.row: 3
+              Layout.minimumWidth: 600
+              id: fuelCombo
+              model: WorldLauncher.fuelWorldsList
+              currentIndex: 0
+              onCurrentIndexChanged: {
+                if (currentIndex < 0)
+                  return;
                 WorldLauncher.SetFuelWorld(textAt(currentIndex));
               }
               ToolTip.visible: hovered
@@ -156,11 +171,10 @@ GridLayout {
               ToolTip.timeout: tooltipTimeout
               ToolTip.text: qsTr("Fuel World Scene names available")
             }
-
             RowLayout {
               Layout.column: 3
-              Layout.row: 2
-
+              Layout.row: 3
+              Layout.alignment: Qt.AlignLeft
               RoundButton {
                 text: "\u21bb"
                 Material.background: Material.primary
@@ -172,65 +186,78 @@ GridLayout {
                 ToolTip.timeout: tooltipTimeout
                 ToolTip.text: qsTr("Refresh World list")
               }
-
-              Button {
-                Layout.alignment: Qt.AlignCenter
-                Layout.minimumWidth: 150
-                Layout.preferredHeight: 50
-                id: fuelButton
-                text: qsTr("Start Simulator")
-                highlighted: true
-                enabled: WorldLauncher.simulationStatus && !WorldLauncher.loadingStatus && WorldLauncher.validFuelWorld
-                onClicked: {
-                  WorldLauncher.OnFuelButton();
-                }
-                ToolTip.visible: hovered
-                ToolTip.delay: tooltipDelay
-                ToolTip.timeout: tooltipTimeout
-                ToolTip.text: qsTr("Start the world scene simulation")
+              BusyIndicator {
+                id: loadingIcon
+                running: WorldLauncher.loadingStatus
               }
             }
           }
+          Button {
+            Layout.alignment: Qt.AlignCenter
+            Layout.fillWidth: true
+            Layout.preferredHeight: 50
+            Layout.leftMargin: 20
+            Layout.rightMargin: 20
+            id: fuelButton
+            text: qsTr("Start Simulator")
+            highlighted: true
+            enabled: WorldLauncher.simulationStatus && !WorldLauncher.loadingStatus && WorldLauncher.validFuelWorld
+            onClicked: {
+              WorldLauncher.SetRenderWorld(fuelRenderCombo.model[fuelRenderCombo.currentIndex]);
+              WorldLauncher.OnFuelButton();
+            }
+            ToolTip.visible: hovered
+            ToolTip.delay: tooltipDelay
+            ToolTip.timeout: tooltipTimeout
+            ToolTip.text: qsTr("Start the world scene simulation")
+          }
+          
         }
       }
+    }
 
-      Item {
-        id: localTab
-
-        Rectangle {
-          anchors.fill: parent
+    Item {
+      id: localTab
+      Rectangle {
+        anchors.fill: parent
+        ColumnLayout {
+          spacing: 5
           GridLayout {
             columns: 3
             columnSpacing: 10
             rows: 2
-            rowSpacing: 10
-            Layout.minimumWidth: 1050
-            Layout.minimumHeight: 300
+            rowSpacing: 5
+            Layout.minimumWidth: 900
+            Layout.minimumHeight: 250
             anchors.fill: parent
             anchors.leftMargin: 10
             anchors.rightMargin: 10
             anchors.bottomMargin: 10
             anchors.topMargin: 10
-
-            Button {
-              Layout.alignment: Qt.AlignCenter
-              Layout.minimumWidth: 150
-              Layout.preferredHeight: 50
+            Text {
               Layout.column: 1
               Layout.row: 1
-              id: createButton
-              text: qsTr("Create new World")
-              highlighted: true
-              enabled: WorldLauncher.simulationStatus
-              onClicked: {
-                WorldLauncher.OnCreateButton();
+              font.pointSize: 12
+              color: "dimgrey"
+              text: "Render Engine: "
+            }
+            ComboBox {
+              Layout.column: 2
+              Layout.row: 1
+              Layout.minimumWidth: 50
+              id: localRenderCombo
+              model: ["ogre2", "ogre"]
+              currentIndex: 0
+              onCurrentIndexChanged: {
+                if (currentIndex < 0)
+                  return;
+                WorldLauncher.SetRenderWorld(textAt(currentIndex));
               }
               ToolTip.visible: hovered
               ToolTip.delay: tooltipDelay
               ToolTip.timeout: tooltipTimeout
-              ToolTip.text: qsTr("Start empty World scene")
+              ToolTip.text: qsTr("Render Engine that is used by the scene and sensors")
             }
-
 
             Text {
               Layout.column: 1
@@ -240,7 +267,6 @@ GridLayout {
               color: "dimgrey"
               text: "Local World Scene: "
             }
-
             ComboBox {
               Layout.column: 2
               Layout.row: 2
@@ -252,49 +278,65 @@ GridLayout {
                 if (currentIndex < 0)
                   return;
                   WorldLauncher.SetWorld(textAt(currentIndex));
+              }
+              ToolTip.visible: hovered
+              ToolTip.delay: tooltipDelay
+              ToolTip.timeout: tooltipTimeout
+              ToolTip.text: qsTr("Local World Scene names available")
+            }
+            RowLayout {
+              Layout.column: 3
+              Layout.row: 2
+              Layout.alignment: Qt.AlignLeft
+              RoundButton {
+                text: "\u002b"
+                Material.background: Material.LightBlue
+                enabled: WorldLauncher.simulationStatus
+                onClicked: {
+                  WorldLauncher.SetRenderWorld(localRenderCombo.model[localRenderCombo.currentIndex]);
+                  WorldLauncher.OnCreateButton();
                 }
                 ToolTip.visible: hovered
                 ToolTip.delay: tooltipDelay
                 ToolTip.timeout: tooltipTimeout
-                ToolTip.text: qsTr("Local World Scene names available")
+                ToolTip.text: qsTr("Start empty World scene")
               }
-
-              RowLayout {
-                Layout.column: 3
-                Layout.row: 2
-
-                RoundButton {
-                  text: "\u21bb"
-                  Material.background: Material.primary
-                  onClicked: {
-                    WorldLauncher.LoadLocalList();
-                  }
-                  ToolTip.visible: hovered
-                  ToolTip.delay: tooltipDelay
-                  ToolTip.timeout: tooltipTimeout
-                  ToolTip.text: qsTr("Refresh World list")
+              
+              RoundButton {
+                text: "\u21bb"
+                Material.background: Material.primary
+                onClicked: {
+                  WorldLauncher.LoadLocalList();
                 }
-
-                Button {
-                  Layout.alignment: Qt.AlignCenter
-                  Layout.minimumWidth: 150
-                  Layout.preferredHeight: 50
-                  id: localButton
-                  text: qsTr("Start Simulator")
-                  highlighted: true
-                  enabled: WorldLauncher.simulationStatus && WorldLauncher.validLocalWorld
-                  onClicked: {
-                    WorldLauncher.OnButton();
-                  }
-                  ToolTip.visible: hovered
-                  ToolTip.delay: tooltipDelay
-                  ToolTip.timeout: tooltipTimeout
-                  ToolTip.text: qsTr("Start the world scene simulation")
-                }
+                ToolTip.visible: hovered
+                ToolTip.delay: tooltipDelay
+                ToolTip.timeout: tooltipTimeout
+                ToolTip.text: qsTr("Refresh World list")
               }
             }
+          }
+          Button {
+            Layout.alignment: Qt.AlignCenter
+            Layout.fillWidth: true
+            Layout.preferredHeight: 50
+            Layout.leftMargin: 20
+            Layout.rightMargin: 20
+            id: localButton
+            text: qsTr("Start Simulator")
+            highlighted: true
+            enabled: WorldLauncher.simulationStatus && WorldLauncher.validLocalWorld
+            onClicked: {
+              WorldLauncher.SetRenderWorld(localRenderCombo.model[localRenderCombo.currentIndex]);
+              WorldLauncher.OnButton();
+            }
+            ToolTip.visible: hovered
+            ToolTip.delay: tooltipDelay
+            ToolTip.timeout: tooltipTimeout
+            ToolTip.text: qsTr("Start the world scene simulation")
           }
         }
       }
     }
+  }
+}
 

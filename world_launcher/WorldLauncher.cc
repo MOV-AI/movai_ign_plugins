@@ -299,11 +299,21 @@ void WorldLauncher::SetFuelWorld(const QString &_sortType)
 }
 
 /////////////////////////////////////////////////
+/// \brief Called by Ignition GUI when there is a change in the combobox of the Fuel World.
+/// \param[in] _sortType the selected string in the combobox.
+void WorldLauncher::SetRenderWorld(const QString &_sortType)
+{
+  // Print chosen world
+  std::cout << "Choosen render engine: " + _sortType.toStdString() << std::endl;
+  this->renderEngine = _sortType.toStdString();
+}
+
+/////////////////////////////////////////////////
 /// \brief Called by Ignition GUI when click on the start button.
 void WorldLauncher::OnButton()
 {
   // Print Full command
-  std::string full_exec = std::string("ign gazebo ") + std::string(this->worldName) + std::string(" -r -v 4 &");
+  std::string full_exec = std::string("ign gazebo ") + std::string(this->worldName) + std::string(" -r -v 4 --render-engine ") + std::string(this->renderEngine) + std::string(" &");
   std::cout << "Executing: " + full_exec << std::endl;
   // Launch the selected world
   std::string result = this->StartSimulator(full_exec);
@@ -315,7 +325,7 @@ void WorldLauncher::OnButton()
 void WorldLauncher::OnFuelButton()
 {
   // Print Full command
-  std::string full_exec = std::string("ign gazebo -r -v 4 'https://") + std::string(this->fuelWorldName) + std::string("' &");
+  std::string full_exec = std::string("ign gazebo -r -v 4 'https://") + std::string(this->fuelWorldName) + std::string("' --render-engine ") + std::string(this->renderEngine) + std::string(" &");
   std::cout << "Downloading and Executing: " + full_exec << std::endl;
   // Launch the selected world
   std::string result = this->StartSimulator(full_exec);
@@ -327,7 +337,7 @@ void WorldLauncher::OnFuelButton()
 void WorldLauncher::OnCreateButton()
 {
   // Print Full command
-  std::string full_exec = std::string("ign gazebo empty.sdf -v4 &");
+  std::string full_exec = std::string("ign gazebo empty.sdf -v4") + std::string(" --render-engine ") + std::string(this->renderEngine) + std::string(" &");
   std::cout << "Empty World " << std::endl;
   // Launch the selected world
   std::string result = this->StartSimulator(full_exec);

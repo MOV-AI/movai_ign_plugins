@@ -131,6 +131,9 @@ namespace ignition
       /// \brief Selected Fuel world uri.
       std::string fuelWorldName{"empty"};
 
+      /// \brief Selected Fuel world uri.
+      std::string renderEngine{"ogre2"};
+
       /// \brief Selected Owner of worlds on Fuel.
       std::string ownerName{"movai"};
 
@@ -208,6 +211,11 @@ namespace ignition
       /// \brief Called by Ignition GUI when there is a change in the combobox of the Fuel World.
       /// \param[in] _sortType the selected string in the combobox.
       void SetFuelWorld(const QString &_sortType);
+
+      /////////////////////////////////////////////////
+      /// \brief Called by Ignition GUI when there is a change in the combobox of the Render Engine.
+      /// \param[in] _sortType the selected string in the combobox.
+      void SetRenderWorld(const QString &_sortType);
 
     private:
       /////////////////////////////////////////////////
