@@ -7,36 +7,20 @@ endif()
 
 set (CMAKE_AUTOMOC ON)
 
-# Find the Ignition gui library
 find_package(ignition-gazebo6 REQUIRED COMPONENTS gui)
-find_package(ignition-transport11 REQUIRED)
-find_package(ignition-common4 REQUIRED)
-
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+find_package(ignition-rendering6 REQUIRED)
 
 # Set Mov.Ai Ignition docker plugins library directory
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY /movai_ign_plugins/system)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY /models_database/movai_ign_plugins/rendering_plugins/build)
 
-include_directories(SYSTEM
-  ${IGNITION-GAZEBO_INCLUDE_DIRS}
-  ${IGNITION-TRANSPORT_INCLUDE_DIRS}
-  ${IGNITION-COMMON_INCLUDE_DIRS}
-)
+QT5_ADD_RESOURCES(resources_RCC MaterialController.qrc)
 
-link_directories(
-  ${IGNITION-GAZEBO_LIBRARY_DIRS}
-  ${IGNITION-TRANSPORT_LIBRARY_DIRS}
-  ${IGNITION-COMMON_LIBRARY_DIRS}
-)
-
-# Generate Library
-add_library(MaterialController SHARED ${headers_MOC}
+add_library(MaterialController SHARED
   MaterialController.cc
   ${resources_RCC}
 )
 target_link_libraries(MaterialController
-  ${IGNITION-GUI_LIBRARIES}
-  ${IGNITION-GAZEBO_LIBRARIES}
-  ${IGNITION-TRANSPORT_LIBRARIES}
-  ${IGNITION-COMMON_LIBRARIES}
+  PRIVATE 
+    ignition-gazebo6::gui
+    ignition-rendering6::ignition-rendering6
 )
