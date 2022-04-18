@@ -14,13 +14,13 @@ find_package(ignition-transport11 REQUIRED)
 # Set Mov.Ai Ignition docker plugins library directory
 # set(CMAKE_LIBRARY_OUTPUT_DIRECTORY /movai_ign_plugins/gui)
 
-QT5_ADD_RESOURCES(resources_RCC MaterialController.qrc)
+QT5_ADD_RESOURCES(resources_RCC EmissivePropertyController.qrc)
 
-add_library(MaterialController SHARED
-  MaterialController.cc
+add_library(EmissivePropertyController SHARED
+  EmissivePropertyController.cc
   ${resources_RCC}
 )
-target_link_libraries(MaterialController
+target_link_libraries(EmissivePropertyController
   PRIVATE 
     ignition-gazebo6::gui
     ignition-rendering6::ignition-rendering6

@@ -1,5 +1,5 @@
-#ifndef MATERIALCONTROLLER_HH_
-#define MATERIALCONTROLLER_HH_
+#ifndef EMISSIVEPROPERTYCONTROLLER_HH_
+#define EMISSIVEPROPERTYCONTROLLER_HH_
 
 #include <ignition/gazebo/gui/GuiSystem.hh>
 #include <ignition/rendering/Scene.hh>
@@ -7,15 +7,15 @@
 #include "ignition/math/Color.hh"
 
 /// \brief GUI plugin that can change the material color of a model link in runtime simulation
-class MaterialController : public ignition::gazebo::GuiSystem
+class EmissivePropertyController : public ignition::gazebo::GuiSystem
 {
   Q_OBJECT
 
   /// \brief Constructor
-  public: MaterialController();
+  public: EmissivePropertyController();
 
   /// \brief Destructor
-  public: ~MaterialController() override;
+  public: ~EmissivePropertyController() override;
 
   /// \brief `ignition::gui::Plugin`s can overload this function to
   /// receive custom configuration from an XML file. Here, it comes from the

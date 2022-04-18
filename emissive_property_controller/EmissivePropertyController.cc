@@ -6,15 +6,15 @@
 #include <ignition/rendering/RenderingIface.hh>
 #include <ignition/rendering/Visual.hh>
 
-#include "MaterialController.hh"
+#include "EmissivePropertyController.hh"
 
 /////////////////////////////////////////////////
 /// \brief Constructor
-MaterialController::MaterialController() = default;
+EmissivePropertyController::EmissivePropertyController() = default;
 
 /////////////////////////////////////////////////
 /// \brief Destructor
-MaterialController::~MaterialController() = default;
+EmissivePropertyController::~EmissivePropertyController() = default;
 
 /////////////////////////////////////////////////
 /// \brief `ignition::gui::Plugin`s can overload this function to
@@ -22,10 +22,10 @@ MaterialController::~MaterialController() = default;
 /// SDF.
 /// \param[in] _pluginElem SDF <plugin> element. Will be null if the plugin
 /// is loaded without any XML configuration.
-void MaterialController::LoadConfig(const tinyxml2::XMLElement * /*_pluginElem*/)
+void EmissivePropertyController::LoadConfig(const tinyxml2::XMLElement * /*_pluginElem*/)
 {
   if (this->title.empty())
-    this->title = "MaterialController";
+    this->title = "EmissivePropertyController";
   // Creating an event filter to be able to catch the render event
   ignition::gui::App()->findChild<
       ignition::gui::MainWindow *>()->installEventFilter(this);
@@ -38,17 +38,17 @@ void MaterialController::LoadConfig(const tinyxml2::XMLElement * /*_pluginElem*/
     ignerr << "Failed to create valid topic" << std::endl;
     return;
   }
-  this->node.Subscribe(topic, &MaterialController::OnChangeCollor,
+  this->node.Subscribe(topic, &EmissivePropertyController::OnChangeCollor,
                                 this);
 
-  ignmsg << "MaterialController subscribing to string messages 'model_name::link_name-R-G-B-A' on [" << topic
+  ignmsg << "EmissivePropertyController subscribing to string messages 'model_name::link_name-R-G-B-A' on [" << topic
          << "]" << std::endl;
 }
 
 //////////////////////////////////////////////////
 /// \brief Callback for link and material subscription
 /// \param[in] _msg Message in "model::link-R-G-B-A" string
-void MaterialController::OnChangeCollor(const ignition::msgs::StringMsg &_msg)
+void EmissivePropertyController::OnChangeCollor(const ignition::msgs::StringMsg &_msg)
 {
   // Spliting the msg in Model::Link name, Red, Green, Blue and Alfa
   std::vector<std::string> seglist = SplitMsg(_msg.data(), '-');
@@ -72,7 +72,7 @@ void MaterialController::OnChangeCollor(const ignition::msgs::StringMsg &_msg)
 /// \brief Callback for all installed event filters.
 /// \param[in] _obj Object that received the event
 /// \param[in] _event Event
-bool MaterialController::eventFilter(QObject *_obj, QEvent *_event)
+bool EmissivePropertyController::eventFilter(QObject *_obj, QEvent *_event)
 {
   if (_event->type() == ignition::gui::events::Render::kType)
   {
@@ -87,7 +87,7 @@ bool MaterialController::eventFilter(QObject *_obj, QEvent *_event)
 
 /////////////////////////////////////////////////
 /// \brief All rendering operations must happen within this call
-void MaterialController::PerformRenderingOperations()
+void EmissivePropertyController::PerformRenderingOperations()
 {
   // Check if there is a material change request. Do nothing if there is no request.
   if (!this->materialRequest)
@@ -135,7 +135,7 @@ void MaterialController::PerformRenderingOperations()
 /////////////////////////////////////////////////
 /// \brief Encapsulates the logic to find the rendering scene through the
 /// render engine singleton.
-void MaterialController::FindScene()
+void EmissivePropertyController::FindScene()
 {
   auto loadedEngNames = ignition::rendering::loadedEngines();
   if (loadedEngNames.empty())
@@ -192,7 +192,7 @@ void MaterialController::FindScene()
 /// \param[in] str std::string to be splited.
 /// \param[in] delim char to delimiter the strings separation.
 /// \return Returns a Vector of strings. std::vector<std::string>
-std::vector<std::string> MaterialController::SplitMsg(std::string const &str, const char delim)
+std::vector<std::string> EmissivePropertyController::SplitMsg(std::string const &str, const char delim)
 {
   size_t start;
   size_t end = 0;
@@ -207,6 +207,6 @@ std::vector<std::string> MaterialController::SplitMsg(std::string const &str, co
 }
 
 // Register this plugin
-IGNITION_ADD_PLUGIN(MaterialController,
+IGNITION_ADD_PLUGIN(EmissivePropertyController,
                     ignition::gui::Plugin)
 

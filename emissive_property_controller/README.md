@@ -1,4 +1,4 @@
-Material Controller Ignition GUI Plugin.
+Emissive Property Controller Ignition GUI Plugin.
 
 This tool is to change the material color of a Model_Link inside the simulation in runtime.
 It is subscribing to a StringMsg on /model/material
