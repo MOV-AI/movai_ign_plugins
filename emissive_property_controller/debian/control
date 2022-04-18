@@ -5,7 +5,7 @@ Priority: optional
 Build-Depends: unzip, debhelper (>= 7.4.3)
 Standards-Version: 3.9.1
 
-Package: movai-ign-plugin-emissive_property_controller
+Package: movai-ign-plugin-emissive-property-controller
 Architecture: all
 Depends: ${misc:Depends}
 Description: Gui plugin used for change the material color of a Model_link at runtime simulation
