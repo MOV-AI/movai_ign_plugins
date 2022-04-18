@@ -1,11 +1,11 @@
-Source: movai-ign-plugin-emergency-button
+Source: movai-ign-plugin-material-controller
 Maintainer: Filipe Almeida<filipe.almeida@mov.ai>
 Section: unknown
 Priority: optional
 Build-Depends: unzip, debhelper (>= 7.4.3)
 Standards-Version: 3.9.1
 
-Package: movai-ign-plugin-emergency-button
+Package: movai-ign-plugin-material-controller
 Architecture: all
 Depends: ${misc:Depends}
-Description: Gui plugin used for select a robot model and starts to publish emergency mode message
+Description: Gui plugin used for change the material color of a Model_link at runtime simulation
