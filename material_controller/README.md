@@ -1,14 +1,18 @@
-Emergency Button Ignition GUI Plugin.
+Material Controller Ignition GUI Plugin.
 
-This tool is to select a model in simulation and start to publish emergency mode msgs.
+This tool is to change the material color of a Model_Link inside the simulation in runtime.
+It is subscribing to a StringMsg on /model/material
+The message must follow the structure:
+"Model_Name::Link_Name-RED-GREEN-BLUE-ALPHA"
+Also, this is a GUI plugin that needs to be loaded in the simulation to enable the color change.
 
 ## Build
 
     Inside Ignition-Container run:
 
     ```
-    mkdir -p /models_database/movai_ign_plugins/emergency_button/build
-    cd /models_database/movai_ign_plugins/emergency_button/build
+    mkdir -p /models_database/movai_ign_plugins/material_controller/build
+    cd /models_database/movai_ign_plugins/material_controller/build
     cmake ..
     make
     cd ..
