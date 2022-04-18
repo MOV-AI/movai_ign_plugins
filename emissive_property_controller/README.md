@@ -11,8 +11,8 @@ Also, this is a GUI plugin that needs to be loaded in the simulation to enable t
     Inside Ignition-Container run:
 
     ```
-    mkdir -p /models_database/movai_ign_plugins/material_controller/build
-    cd /models_database/movai_ign_plugins/material_controller/build
+    mkdir -p /models_database/movai_ign_plugins/emissive_property_controller/build
+    cd /models_database/movai_ign_plugins/emissive_property_controller/build
     cmake ..
     make
     cd ..
