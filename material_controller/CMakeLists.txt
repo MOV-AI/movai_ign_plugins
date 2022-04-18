@@ -11,7 +11,7 @@ find_package(ignition-gazebo6 REQUIRED COMPONENTS gui)
 find_package(ignition-rendering6 REQUIRED)
 
 # Set Mov.Ai Ignition docker plugins library directory
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY /models_database/movai_ign_plugins/rendering_plugins/build)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY /movai_ign_plugins/gui)
 
 QT5_ADD_RESOURCES(resources_RCC MaterialController.qrc)
 

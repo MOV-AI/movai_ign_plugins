@@ -37,7 +37,7 @@ void MaterialController::LoadConfig(const tinyxml2::XMLElement * /*_pluginElem*/
       ignition::gui::MainWindow *>()->installEventFilter(this);
   //! [connectToGuiEvent]
   // Subscribe to commands
-  auto topic = ignition::transport::TopicUtils::AsValidTopic("/model/color");
+  auto topic = ignition::transport::TopicUtils::AsValidTopic("/model/material");
   if (topic.empty())
   {
     ignerr << "Failed to create valid topic ]" << std::endl;
@@ -48,7 +48,7 @@ void MaterialController::LoadConfig(const tinyxml2::XMLElement * /*_pluginElem*/
 
   ignmsg << "MaterialController subscribing to Double messages on [" << topic
          << "]" << std::endl;
-  std::string topicName = "/model/color";
+  std::string topicName = "/model/material";
   ignerr << "Subscribing to" << topicName << std::endl;
   // Here you can read configuration from _pluginElem, if it's not null.
 }
