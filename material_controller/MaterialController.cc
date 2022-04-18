@@ -1,67 +1,56 @@
 #include <ignition/plugin/Register.hh>
-#include <ignition/gazebo/components/Name.hh>
-#include <ignition/gazebo/components/Model.hh>
-#include <ignition/gazebo/components/ChildLinkName.hh>
-#include <ignition/gazebo/components/ParentEntity.hh>
-#include <ignition/gazebo/components/World.hh>
-#include <ignition/gazebo/EntityComponentManager.hh>
-#include <ignition/gazebo/gui/GuiEvents.hh>
-#include "ignition/gazebo/components/Factory.hh"
-
 #include <ignition/gui/Application.hh>
-//! [includeGuiEvents]
 #include <ignition/gui/GuiEvents.hh>
-//! [includeGuiEvents]
 #include <ignition/gui/MainWindow.hh>
-#include <ignition/math/Rand.hh>
-#include <ignition/plugin/Register.hh>
 #include <ignition/rendering/RenderEngine.hh>
 #include <ignition/rendering/RenderingIface.hh>
-#include <ignition/rendering/Scene.hh>
 #include <ignition/rendering/Visual.hh>
 
 #include "MaterialController.hh"
 
 /////////////////////////////////////////////////
+/// \brief Constructor
 MaterialController::MaterialController() = default;
 
 /////////////////////////////////////////////////
+/// \brief Destructor
 MaterialController::~MaterialController() = default;
 
 /////////////////////////////////////////////////
+/// \brief `ignition::gui::Plugin`s can overload this function to
+/// receive custom configuration from an XML file. Here, it comes from the
+/// SDF.
+/// \param[in] _pluginElem SDF <plugin> element. Will be null if the plugin
+/// is loaded without any XML configuration.
 void MaterialController::LoadConfig(const tinyxml2::XMLElement * /*_pluginElem*/)
 {
   if (this->title.empty())
-    this->title = "GUI system plugin";
+    this->title = "MaterialController";
+  // Creating an event filter to be able to catch the render event
   ignition::gui::App()->findChild<
       ignition::gui::MainWindow *>()->installEventFilter(this);
-  //! [connectToGuiEvent]
-  // Subscribe to commands
-  auto topic = ignition::transport::TopicUtils::AsValidTopic("/model/material");
+
+  // Creating the subscriber
+  std::string topicName = "/model/material";
+  auto topic = ignition::transport::TopicUtils::AsValidTopic(topicName);
   if (topic.empty())
   {
-    ignerr << "Failed to create valid topic ]" << std::endl;
+    ignerr << "Failed to create valid topic" << std::endl;
     return;
   }
   this->node.Subscribe(topic, &MaterialController::OnChangeCollor,
                                 this);
 
-  ignmsg << "MaterialController subscribing to Double messages on [" << topic
+  ignmsg << "MaterialController subscribing to string messages 'model_name::link_name-R-G-B-A' on [" << topic
          << "]" << std::endl;
-  std::string topicName = "/model/material";
-  ignerr << "Subscribing to" << topicName << std::endl;
-  // Here you can read configuration from _pluginElem, if it's not null.
-}
-
-/////////////////////////////////////////////////
-void MaterialController::RandomColor()
-{
-  this->dirty = true;
 }
 
 //////////////////////////////////////////////////
+/// \brief Callback for link and material subscription
+/// \param[in] _msg Message in "model::link-R-G-B-A" string
 void MaterialController::OnChangeCollor(const ignition::msgs::StringMsg &_msg)
 {
+  // Spliting the msg in Model::Link name, Red, Green, Blue and Alfa
   std::vector<std::string> seglist = SplitMsg(_msg.data(), '-');
   if (seglist.size() == 5)
   {
@@ -70,16 +59,19 @@ void MaterialController::OnChangeCollor(const ignition::msgs::StringMsg &_msg)
     this->newEmissive.G() = std::stof(seglist[2]);
     this->newEmissive.B() = std::stof(seglist[3]);
     this->newEmissive.A() = std::stof(seglist[4]);
-    this->dirty = true;
+    // Flag to request a change in render event
+    this->materialRequest = true;
   }
   else
   {
-    ignerr << "No size match" << std::endl;
+    ignerr << "String size does not match. The message should be 'model_name::link_name-R-G-B-A'" << std::endl;
   }
 }
 
 /////////////////////////////////////////////////
-//! [eventFilter]
+/// \brief Callback for all installed event filters.
+/// \param[in] _obj Object that received the event
+/// \param[in] _event Event
 bool MaterialController::eventFilter(QObject *_obj, QEvent *_event)
 {
   if (_event->type() == ignition::gui::events::Render::kType)
@@ -92,56 +84,57 @@ bool MaterialController::eventFilter(QObject *_obj, QEvent *_event)
   // Standard event processing
   return QObject::eventFilter(_obj, _event);
 }
-//! [eventFilter]
 
 /////////////////////////////////////////////////
-//! [performRenderingOperations]
+/// \brief All rendering operations must happen within this call
 void MaterialController::PerformRenderingOperations()
 {
-  if (!this->dirty)
+  // Check if there is a material change request. Do nothing if there is no request.
+  if (!this->materialRequest)
   {
     return;
   }
 
+  // Get the simulation scene if there is no one selected.
   if (nullptr == this->scene)
   {
     this->FindScene();
   }
 
+  // Nothing to do if there is no scene available
   if (nullptr == this->scene)
+  {
+    ignerr << "No scene available" << std::endl;
+    this->materialRequest = false;
     return;
-  
+  }
+
+  // Get the visual propriety attached to the LinkName on the message
   auto visual = this->scene->VisualByName(this->linkName);
 
+  // Check if the visual propriety exist
   if (nullptr == visual)
   {
-    ignerr << "No visual" << std::endl;
+    ignerr << "No visual with the name: "<< this->linkName << std::endl;
+    this->materialRequest = false;
+    return;
   }
 
-  auto targetVis = std::dynamic_pointer_cast<ignition::rendering::Visual>(visual);
+  // Creating the material and setting the Color to Ambient, Diffuse and Emissive proprieties
+  ignition::rendering::MaterialPtr material = this->scene->CreateMaterial();
+  material->SetAmbient(this->newEmissive);
+  material->SetDiffuse(this->newEmissive);
+  material->SetEmissive(this->newEmissive);
 
-  if (targetVis && targetVis->HasUserData("gazebo-entity"))
-  {
-    ignition::gazebo::Entity targetEntity =
-        std::get<int>(targetVis->UserData("gazebo-entity"));
+  // Applying the material to the selected visual link.
+  visual->SetMaterial(material);
 
-    ignition::rendering::MaterialPtr material = this->scene->CreateMaterial();
-    material->SetAmbient(this->newEmissive);
-    material->SetDiffuse(this->newEmissive);
-    // material->SetSpecular(1.0, 1.0, 1.0);
-    material->SetEmissive(this->newEmissive);
-    visual->SetMaterial(material);
-  }
-  else
-  {
-    ignerr << "Unable to find entity to change color" << std::endl;
-  }
-
-  this->dirty = false;
+  this->materialRequest = false;
 }
-//! [performRenderingOperations]
 
 /////////////////////////////////////////////////
+/// \brief Encapsulates the logic to find the rendering scene through the
+/// render engine singleton.
 void MaterialController::FindScene()
 {
   auto loadedEngNames = ignition::rendering::loadedEngines();
@@ -194,30 +187,6 @@ void MaterialController::FindScene()
   this->scene = scenePtr;
 }
 
-//////////////////////////////////////////////////
-void MaterialController::Update(const ignition::gazebo::UpdateInfo & _info,
-    ignition::gazebo::EntityComponentManager &_ecm)
-{
-  // In the update loop, you can for example get the name of the world and set
-  // it as a property that can be read from the QML.
-  if (_info.paused)
-    return;
-}
-
-/////////////////////////////////////////////////
-QString MaterialController::CustomProperty() const
-{
-  return this->customProperty;
-}
-
-/////////////////////////////////////////////////
-void MaterialController::SetCustomProperty(const QString &_customProperty)
-{
-  this->customProperty = _customProperty;
-  this->CustomPropertyChanged();
-}
-
-
 /////////////////////////////////////////////////
 /// \brief Function used to split a string by a delimiter character.
 /// \param[in] str std::string to be splited.
@@ -236,6 +205,7 @@ std::vector<std::string> MaterialController::SplitMsg(std::string const &str, co
   }
   return out;
 }
+
 // Register this plugin
 IGNITION_ADD_PLUGIN(MaterialController,
                     ignition::gui::Plugin)
