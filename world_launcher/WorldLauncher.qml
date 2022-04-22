@@ -307,6 +307,7 @@ GridLayout {
                 Material.background: Material.primary
                 onClicked: {
                   WorldLauncher.LoadLocalList();
+                  localCombo.currentIndex = 0;
                 }
                 ToolTip.visible: hovered
                 ToolTip.delay: tooltipDelay
