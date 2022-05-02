@@ -1,5 +1,10 @@
 movai-ign-plugin-emergency-button (1.0.1-0) UNRELEASED; urgency=medium
 
+  [ Filipe ]
   * Initial release. (Closes: #XXXXXX)
 
- -- Filipe <filipe.almeida@mov.ai>  Wed, 12 Jan 2022 17:23:23 +0100
+  [ root ]
+  * bump version
+  * bump version
+
+ -- root <root@a692519ccc8a>  Tue, 15 Mar 2022 18:18:23 +0000
