@@ -4,7 +4,7 @@ on:
     types: [released]
 jobs:
   Release:
-    uses: MOV-AI/.github/.github/workflows/cpp-workflow.yml@feature/add-cpp
+    uses: MOV-AI/.github/.github/workflows/ros-workflow.yml@feat/enable-multi-prod-publish
     with:
       release: 'true'
       prod_publish_repos: '["ppa-public"]'
