@@ -1,5 +1,10 @@
-movai-ign-plugin-emissive-property-controller (1.0.1-0) UNRELEASED; urgency=medium
+movai-ign-plugin-emissive-property-controller (1.0.1-2) UNRELEASED; urgency=medium
 
+  [ Filipe ]
   * Initial release. (Closes: #XXXXXX)
 
- -- Filipe <filipe.almeida@mov.ai>  Wed, 12 Jan 2022 17:23:23 +0100
+  [ root ]
+  * bump version
+  * bump version
+
+ -- root <root@4427845b4153>  Fri, 06 May 2022 13:22:32 +0000
