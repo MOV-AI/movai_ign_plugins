@@ -18,3 +18,5 @@ jobs:
       nexus_publisher_password: ${{ secrets.TMP_PACKAGE_DEPLOYER_NX_PWD }}
       gh_token: ${{ secrets.GITHUB_TOKEN }}
       sonar_token: ${{ secrets.SONAR_TOKEN }}
+      aws_sqs_rosdep_access_key: ${{ secrets.AWS_SQS_ROSDEP_ACCESS_KEY }}
+      aws_sqs_rosdep_secret_access_key: ${{ secrets.AWS_SQS_ROSDEP_SECRET_ACCESS_KEY }}
