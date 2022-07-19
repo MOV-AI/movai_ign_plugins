@@ -33,15 +33,6 @@ void BatteryStation::Configure(const Entity &_entity,
     return;
   }
 
-  // Get the Robot charge link in the SDF parameter of this plugin
-  this->robotLinkName = _sdf->Get<std::string>("robot_charge_link");
-  if (this->robotLinkName.empty())
-  {
-    ignerr << "BatteryStation found an empty robot_charge_link parameter. This should be the link of the charge in the robot"
-           << "Failed to initialize.";
-    return;
-  }
-
   // Get the battery name used in the robot. This name is a Ignition Gazebo linear battery plugin name
   this->batteryName = _sdf->Get<std::string>("battery_name");
   if (this->batteryName.empty())
