@@ -4,7 +4,7 @@ on:
     types: [released]
 jobs:
   Release:
-    uses: MOV-AI/.github/.github/workflows/ros-workflow.yml@feat/enable-multi-prod-publish
+    uses: MOV-AI/.github/.github/workflows/ros-workflow.yml@v1
     with:
       release: 'true'
       ros_distro: '["noetic"]'
