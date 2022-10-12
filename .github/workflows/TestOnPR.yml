@@ -10,7 +10,7 @@ on:
 
 jobs:
   CI:
-    uses: MOV-AI/.github/.github/workflows/cpp-workflow.yml@feature/add-cpp
+    uses: MOV-AI/.github/.github/workflows/cpp-workflow.yml@v1
     with:
       deploy: 'false'
       components: '["world_launcher", "emergency_button", "emissive_property_controller"]'
