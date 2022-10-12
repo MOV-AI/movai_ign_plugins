@@ -1,0 +1,11 @@
+Source: movai-ign-plugin-battery-station
+Maintainer: Filipe Almeida<filipe.almeida@mov.ai>
+Section: unknown
+Priority: optional
+Build-Depends: unzip, debhelper (>= 7.4.3)
+Standards-Version: 3.9.1
+
+Package: movai-ign-plugin-battery-station
+Architecture: all
+Depends: ${misc:Depends}
+Description: This plugin can identify and trigger the charge of a linear battery plugin attached to a robot in the simulation.
