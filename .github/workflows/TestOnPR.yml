@@ -10,8 +10,7 @@ on:
 
 jobs:
   CI:
-    uses: MOV-AI/.github/.github/workflows/cpp-workflow.yml@feature/add-cpp
-    with:
+    uses: MOV-AI/.github/.github/workflows/cpp-workflow.yml@v1
       deploy: 'false'
       components: '["world_launcher", "emergency_button", "emissive_property_controller"]'
       custom_requirements: curl -fsSL http://packages.osrfoundation.org/gazebo.key | apt-key add - ;add-apt-repository "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main"
