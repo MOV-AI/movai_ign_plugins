@@ -13,7 +13,7 @@ jobs:
     uses: MOV-AI/.github/.github/workflows/cpp-workflow.yml@v1
     with:
       deploy: 'true'
-      components: '["world_launcher", "emergency_button", "emissive_property_controller"]'
+      components: '["world_launcher", "emergency_button", "emissive_property_controller", "battery_station"]'
       custom_requirements: curl -fsSL http://packages.osrfoundation.org/gazebo.key | apt-key add - ;add-apt-repository "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main"
     secrets:
       auto_commit_user: ${{ secrets.RAISE_BOT_COMMIT_USER }}
