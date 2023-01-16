@@ -16,7 +16,7 @@ RemoveObject::~RemoveObject() = default;
 
 //////////////////////////////////////////////////
 /// \brief This function is called when the model attached is loaded in the simulation
-/// \param[in] _entity Object model that this plugin is attached (AKA pallet models)
+/// \param[in] _entity Object model that this plugin is attached 
 /// \param[in] _sdf SDF element of the plugin in the model attached 
 /// \param[in] _ecm Entity Component Manager
 void RemoveObject::Configure(const Entity &_entity,
@@ -45,7 +45,7 @@ void RemoveObject::Configure(const Entity &_entity,
   //Change name of the topic to subscribe to
   std::string topic = "/model/remove";
 
-  // Subscribe to the charge station contact topic
+  // Subscribe to the remove object topic
   this->node.Subscribe(topic, &RemoveObject::OnTrigger,
                                 this);
 
@@ -64,9 +64,8 @@ void RemoveObject::Update(const ignition::gazebo::UpdateInfo &_info,
   if (_info.paused)
     return;
   
-  // Create the ignition boolean message true due to different services to charge and discharge.
+  // Create the ignition service request parameters to delete an object
   // msgs::Entity msgState;
-  // msgState.set_name(std::to_string(_entity));
     bool result ;
     ignition::msgs::Entity req;
     ignition::msgs::Boolean res;
@@ -81,19 +80,17 @@ void RemoveObject::Update(const ignition::gazebo::UpdateInfo &_info,
           bool temp = this->node.Request(srvRemove, req, timeout,res,result);
           ignwarn << entities[i] << " removed"<< std::endl;
         }       
-      // // Create the charge service topic using the contact informations and call the service to charge the battery
-       
-       
+      
       // ignmsg << "Removed Object" << std::endl;
     }
 
-  // Set the state to false to verify if there still contact or not
+  // Set the state to false to only try to remove the object once
   this->remove_object = false;
     
 }
 
 // //////////////////////////////////////////////////
-/// \brief Callback for contact subscription
+/// \brief Callback for remove topic
 /// \param[in] _msg Message
 void RemoveObject::OnTrigger(const ignition::msgs::StringMsg &_msg)
 {

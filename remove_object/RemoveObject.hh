@@ -26,7 +26,7 @@ class RemoveObject : public ignition::gazebo::System,
 
   //////////////////////////////////////////////////
   /// \brief This function is called when the model attached is loaded in the simulation
-  /// \param[in] _entity Object model that this plugin is attached (AKA pallet models)
+  /// \param[in] _entity Object model that this plugin is attached
   /// \param[in] _sdf SDF element of the plugin in the model attached 
   /// \param[in] _ecm Entity Component Manager
   public: void Configure(const Entity &_entity,
@@ -42,7 +42,7 @@ class RemoveObject : public ignition::gazebo::System,
               ignition::gazebo::EntityComponentManager &_ecm);
 
   //////////////////////////////////////////////////
-  /// \brief Callback for contact subscription
+  /// \brief Callback for remove topic subscription
   /// \param[in] _msg Message
   private: void OnTrigger(const ignition::msgs::StringMsg &_msg);
 
@@ -50,20 +50,14 @@ class RemoveObject : public ignition::gazebo::System,
   /// \brief Ignition communication node.
   public: ignition::transport::Node node;
 
-  /// \brief Robot name var to get the model in contact with the charge
+  /// \brief Removed object name
   public: std::string objectName;
 
-  // /// \brief Robot link name that is used to charge the battery
-  // public: std::string robotLinkName;
-
-  // /// \brief Robot battery name used in the ignition plugin Linear Battery
+ /// \brief World name
   public: std::string  worldName;
   
-  /// \brief Charge state var in the update moment
+  /// \brief Remove state var in the update moment
   public: bool remove_object{false};
-
-  // /// \brief Charge state var in the last update
-  // public: bool oldState{false};
 
   /// \brief Model entity that this plugin is attached
   public: Model model{kNullEntity};
