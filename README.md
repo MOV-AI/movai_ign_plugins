@@ -1,5 +1,5 @@
 # movai_ign_plugins
-Repository for holding the system and/or gui plugins for the Gazebo Ignition Fortress  simulator
+Repository for holding the system and/or gui plugins for the ignition simulator
 
 # World Launcher Plugin
 ## Install from Debian package (APT)
