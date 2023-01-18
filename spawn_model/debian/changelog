@@ -1,4 +1,4 @@
-movai-ign-plugin-spawn-object (0.0.0-1) UNRELEASED; urgency=medium
+movai-ign-plugin-spawn-model (0.0.0-1) UNRELEASED; urgency=medium
 
   [ Filipe ]
   * Initial release. (Closes: #XXXXXX)
