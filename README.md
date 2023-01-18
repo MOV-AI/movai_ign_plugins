@@ -22,11 +22,10 @@ Note: MOVAI Flow IDE - Spawner Container [https://github.com/MOV-AI/containers-s
 
 ## Build from sources
 
-...
 
 # emergency_button Plugin
 ## Install from Debian package (APT)
-## Run 
+## Run
 ## Build from sources
 
 # emissive_property_controller  Plugin
