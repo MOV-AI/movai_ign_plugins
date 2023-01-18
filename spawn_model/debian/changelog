@@ -1,0 +1,10 @@
+movai-ign-plugin-spawn-model (0.0.0-1) UNRELEASED; urgency=medium
+
+  [ Filipe ]
+  * Initial release. (Closes: #XXXXXX)
+
+  [ root ]
+  * bump version
+  * bump version
+
+ -- root <root@4427845b4153>  Fri, 06 May 2022 13:22:32 +0000
