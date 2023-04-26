@@ -38,14 +38,19 @@ void SpawnModel::Configure(const Entity &_entity,
   if (worldEntity == kNullEntity)
     return;
 
-  // Get the components name to create the spawn topic subscriber
+  // Get the component's name to create the spawn topic subscriber
   std::string objectName = _ecm.Component<components::Name>(_entity)->Data();
   this->worldName = _ecm.Component<components::Name>(worldEntity)->Data();
-  //Change name of the topic to subscribe to
+  //Create topics to subscribe to 
+  // - "create" -> PoseArray message to get the pose of each object to spawn
+  // - "model_array" -> name of the models to spawn
   std::string topic = "/world/" + worldName + "/create";
+  std::string topic2 = "/world/" + worldName + "/model_array";
 
-  // Subscribe to the spawn topic
+  // Subscribe to the spawn topics
   this->node.Subscribe(topic, &SpawnModel::OnSpawnCmd,
+                                this);
+  this->node.Subscribe(topic2, &SpawnModel::OnModelArray,
                                 this);
 
 }
@@ -64,63 +69,87 @@ void SpawnModel::Update(const ignition::gazebo::UpdateInfo &_info,
     return;
 
     bool result;
+    // Create service variables
     ignition::msgs::EntityFactory req;
     ignition::msgs::Boolean res;
-    
-    int timeout = 3;
-    std::string reqStr = std::string("<sdf version='1.7'>") +
-    "<model name='" + this->objectName +"_" + std::to_string(this->nrObjectsSpawned) + "'> " +
-      "<include>"
-        "<uri>model://"+ this->objectName+ "</uri>"+
-        "<pose>" +
-        std::to_string(this->objectPosition.x()) + " " +
-        std::to_string(this->objectPosition.y()) + " " +
-        std::to_string(this->objectPosition.z()) + " " +
-        std::to_string(this->objectOrientation.x()) + " " +
-        std::to_string(this->objectOrientation.y()) + " " +
-        std::to_string(this->objectOrientation.z()) +
-        "</pose>" +
-      "</include>"+
-    "</model>"+
-  "</sdf>";
+    const std::string srvCreate = "/world/" + this->worldName + "/create";
+    int timeout = 100;
 
-    // TODO: transform quaternion to euler
-    req.set_sdf(reqStr);
-    if (this->spawnObject)
-    {
-      // Create the spawn service topic using the message informations and call the service to spawn a model
-      const std::string srvCreate = "/world/" + this->worldName + "/create";
-      //  ignwarn << "Created " << reqStr << std::endl;
-      this->node.Request(srvCreate, req,timeout,res,result);
-      ignmsg << "Created Object" << std::endl;
-    }
-    this->spawnObject = false;
+    //Create lis of models in the simulation world
+    if (this->string_ready && this->spawnObject){
     
+      for(int i = 0; i<this->objectPosition.size();i++){
+        std::string reqStr = std::string("<sdf version='1.7'>") +
+        "<model name='" + this->model_name[i] +"_" + std::to_string(this->nrObjectsSpawned) + "'> " +
+          "<include>"
+            "<uri>model://"+ this->model_name[i]+ "</uri>"+
+            "<pose>" +
+            std::to_string(this->objectPosition[i].x()) + " " +
+            std::to_string(this->objectPosition[i].y()) + " " +
+            std::to_string(this->objectPosition[i].z()) + " " +
+            std::to_string(this->objectOrientation[i].x()) + " " +
+            std::to_string(this->objectOrientation[i].y()) + " " +
+            std::to_string(this->objectOrientation[i].z()) +
+            "</pose>" +
+          "</include>"+
+        "</model>"+
+      "</sdf>";
+       req.set_sdf(reqStr);
+       this->node.Request(srvCreate, req,timeout,res,result);
+
+       //Make each object have a unique identifier
+       this->nrObjectsSpawned ++;
+
+      }
+      // Stop the Update function from spawning duplicates
+      this->spawnObject = false;
+      this->string_ready = false;
+
+
+      // Clear variables containing the names and poses of the models spawned
+      if(!this->model_name.empty()){
+        this->objectPosition.clear();
+        this->objectOrientation.clear();
+        this->model_name.clear();
+      }
+      }
+
 }
 
+
 // //////////////////////////////////////////////////
-/// \brief Callback for PoseArray message subscription
+/// \brief Callback for model PoseArray message subscription
 /// \param[in] _msg Message
 void SpawnModel::OnSpawnCmd(const ignition::msgs::Pose_V &_msg)
 {   
-     std::string j = _msg.header().data(1).value(0);
-    ignwarn << j << std::endl;
-
-    if (j != ""){
-        this->objectName = j;
-        this->objectPosition = _msg.pose(0).position();
-         ignwarn << this->objectPosition.x()<< std::endl;
-         ignwarn << this->objectPosition.y()<< std::endl;
-         ignwarn << this->objectPosition.z()<< std::endl;
-        this->objectOrientation = _msg.pose(0).orientation();
-         ignwarn << this->objectOrientation.x()<< std::endl;
-         ignwarn << this->objectOrientation.y()<< std::endl;
-         ignwarn << this->objectOrientation.z()<< std::endl;
-        this->spawnObject = true; 
-        this->nrObjectsSpawned ++;
-    }
+  // Append model poses to class variables
+      for(int i = 0; i<_msg.pose().size();i++){
+        this->objectPosition.push_back(_msg.pose(i).position());
+        this->objectOrientation.push_back(_msg.pose(i).orientation());
+      }
+         this->spawnObject = true; 
 }
 
+// //////////////////////////////////////////////////
+/// \brief Callback for model names message subscription
+/// \param[in] _msg Message
+void SpawnModel::OnModelArray(const ignition::msgs::StringMsg &_msg)
+{   
+    // Check if the received data is not empty
+    if (!_msg.data().empty()){
+
+      //Create a vector with model names
+      size_t pos = 0;
+      std::string s = _msg.data();
+      int counter = 0;
+      while((pos = s.find(this->delimiter)) != std::string::npos){
+        this->model_name.push_back(s.substr(0,pos)) ;        
+        s.erase(0,pos+1);
+        counter++;
+      }
+      this-> string_ready = true;
+    }
+}
 // Register this plugin
 IGNITION_ADD_PLUGIN(SpawnModel,
                     ignition::gazebo::System,
