@@ -141,11 +141,9 @@ void SpawnModel::OnModelArray(const ignition::msgs::StringMsg &_msg)
       //Create a vector with model names
       size_t pos = 0;
       std::string s = _msg.data();
-      int counter = 0;
       while((pos = s.find(this->delimiter)) != std::string::npos){
         this->model_name.push_back(s.substr(0,pos)) ;        
         s.erase(0,pos+1);
-        counter++;
       }
       this-> string_ready = true;
     }

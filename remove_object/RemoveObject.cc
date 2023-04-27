@@ -132,13 +132,11 @@ void RemoveObject::OnTrigger(const ignition::msgs::StringMsg &_msg)
     if (!_msg.data().empty()){
       size_t pos = 0;
       std::string s = _msg.data();
-      int counter = 0;
 
       //Create a vector with model names
       while((pos = s.find(this->delimiter)) != std::string::npos){
         this->vector_name.push_back(s.substr(0,pos)) ;        
         s.erase(0,pos+1);
-        counter++;
       }
       this->remove_object = true;  
     }
