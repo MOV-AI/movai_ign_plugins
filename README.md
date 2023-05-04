@@ -1,5 +1,5 @@
 # movai_ign_plugins
-Repository for holding the system and/or gui plugins for the Gazebo Ignition Fortress  simulator
+Repository for holding the system and/or gui plugins for the ignition simulator
 
 # World Launcher Plugin
 ## Install from Debian package (APT)
@@ -22,11 +22,10 @@ Note: MOVAI Flow IDE - Spawner Container [https://github.com/MOV-AI/containers-s
 
 ## Build from sources
 
-...
 
 # emergency_button Plugin
 ## Install from Debian package (APT)
-## Run 
+## Run
 ## Build from sources
 
 # emissive_property_controller  Plugin
