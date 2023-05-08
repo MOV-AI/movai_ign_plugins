@@ -50,6 +50,7 @@ class SpawnModel : public ignition::gazebo::System,
   /// \param[in] _msg Message
   private: void OnSpawnCmd(const ignition::msgs::Pose_V &_msg);
 
+  private: void OnModelArray(const ignition::msgs::StringMsg &_msg);
 
   /// \brief Ignition communication node.
   public: ignition::transport::Node node;
@@ -61,17 +62,26 @@ class SpawnModel : public ignition::gazebo::System,
   public: std::string  worldName;
   
   /// @brief Object Pose
-  public: ignition::msgs::Quaternion objectOrientation;
+  public: std::vector<ignition::msgs::Quaternion> objectOrientation;
 
-  public: ignition::msgs::Vector3d objectPosition;
+  public: std::vector<ignition::msgs::Vector3d> objectPosition;
   /// @brief Number of objects spawned so far
   public: int nrObjectsSpawned{0};
 
-  /// \brief Spawn trigger variable in the update moment
+  /// \brief Spawn trigger variable in the update function
   public: bool spawnObject{false};
 
   /// \brief Model entity that this plugin is attached
   public: Model model{kNullEntity};
+
+  /// \brief Model names variablle in the update function
+  public: bool string_ready{false};
+ 
+  /// \brief To spawn model names vector 
+  public: std::vector<std::string> model_name;
+
+  /// \brief Character between model names 
+  private: char delimiter{'!'};
 
 };
 

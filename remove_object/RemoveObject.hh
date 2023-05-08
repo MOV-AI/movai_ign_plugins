@@ -16,7 +16,8 @@ using namespace systems;
 /// \brief Remove Object Plugin that can identify and trigger the removal of the object it is attached to
 class RemoveObject : public ignition::gazebo::System,
     public ignition::gazebo::ISystemConfigure,
-    public ignition::gazebo::ISystemUpdate
+    public ignition::gazebo::ISystemUpdate,
+    public ignition::gazebo::ISystemPostUpdate
 {
   /// \brief Constructor
   public: RemoveObject();
@@ -44,8 +45,11 @@ class RemoveObject : public ignition::gazebo::System,
   //////////////////////////////////////////////////
   /// \brief Callback for removal subscription
   /// \param[in] _msg Message
-  private: void OnTrigger(const ignition::msgs::StringMsg &_msg);
+  // private: void OnTrigger(const ignition::msgs::StringMsg_V &_msg);
+  private: void OnTrigger(const msgs::StringMsg &_msg);
 
+  public: void PostUpdate(const UpdateInfo &/*_info*/,
+                          const EntityComponentManager &_ecm) ;
 
   /// \brief Ignition communication node.
   public: ignition::transport::Node node;
@@ -55,12 +59,21 @@ class RemoveObject : public ignition::gazebo::System,
 
   /// \brief World name in which to remove entities
   public: std::string  worldName;
+
+  /// \brief Vector to populate with models' names 
+  public: std::vector<std::string> vector_name;
   
   /// \brief Boolean to trigger the removal of a specific entity
   public: bool remove_object{false};
 
   /// \brief Model entity that this plugin is attached
   public: Model model{kNullEntity};
+
+  /// \brief Delimiter between model names
+  private: char delimiter{'!'};
+
+  /// \brief Removal service string
+  public: std::string srvRemove;
 };
 
 #endif

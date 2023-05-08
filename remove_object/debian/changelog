@@ -1,4 +1,6 @@
-movai-ign-plugin-remove-object (1.0.1-8) UNRELEASED; urgency=medium
+
+movai-ign-plugin-remove-object (1.0.2-0) UNRELEASED; urgency=medium
+
 
   [ Filipe ]
   * Initial release. (Closes: #XXXXXX)
