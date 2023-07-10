@@ -44,13 +44,13 @@ void SpawnModel::Configure(const Entity &_entity,
   //Create topics to subscribe to 
   // - "create" -> PoseArray message to get the pose of each object to spawn
   // - "model_array" -> name of the models to spawn
-  std::string topic = "/world/" + worldName + "/create";
-  std::string topic2 = "/world/" + worldName + "/model_array";
+  std::string spawn_topic = "/world/" + worldName + "/create";
+  std::string array_topic = "/world/" + worldName + "/model_array";
 
   // Subscribe to the spawn topics
-  this->node.Subscribe(topic, &SpawnModel::OnSpawnCmd,
+  this->node.Subscribe(spawn_topic, &SpawnModel::OnSpawnCmd,
                                 this);
-  this->node.Subscribe(topic2, &SpawnModel::OnModelArray,
+  this->node.Subscribe(array_topic, &SpawnModel::OnModelArray,
                                 this);
 
 }
@@ -79,22 +79,19 @@ void SpawnModel::Update(const ignition::gazebo::UpdateInfo &_info,
     if (this->string_ready && this->spawnObject){
     
       for(int i = 0; i<this->objectPosition.size();i++){
-        std::string reqStr = std::string("<sdf version='1.7'>") +
+        std::string sdf = std::string("<sdf version='1.7'>") +
         "<model name='" + this->model_name[i] +"_" + std::to_string(this->nrObjectsSpawned) + "'> " +
           "<include>"
             "<uri>model://"+ this->model_name[i]+ "</uri>"+
-            "<pose>" +
-            std::to_string(this->objectPosition[i].x()) + " " +
-            std::to_string(this->objectPosition[i].y()) + " " +
-            std::to_string(this->objectPosition[i].z()) + " " +
-            std::to_string(this->objectOrientation[i].x()) + " " +
-            std::to_string(this->objectOrientation[i].y()) + " " +
-            std::to_string(this->objectOrientation[i].z()) +
-            "</pose>" +
           "</include>"+
         "</model>"+
       "</sdf>";
-       req.set_sdf(reqStr);
+      //Define the pose of the spawned object
+       ignition::msgs::Set(req.mutable_pose(),math::Pose3d(this->objectPosition[i].x(),this->objectPosition[i].y(),this->objectPosition[i].z(),
+       this->objectOrientation[i].w(),this->objectOrientation[i].x(),this->objectOrientation[i].y(),this->objectOrientation[i].z()));
+       //Add the xml to the request object
+       req.set_sdf(sdf);
+       //Call service 
        this->node.Request(srvCreate, req,timeout,res,result);
 
        //Make each object have a unique identifier
