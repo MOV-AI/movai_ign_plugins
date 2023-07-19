@@ -5,23 +5,23 @@ on:
       - dev
       - main
       - 'releases/**'
+    paths-ignore:
+      - '**/changelog'
 
 jobs:
   CI:
-    uses: MOV-AI/.github/.github/workflows/ros-workflow.yml@v2
+    uses: MOV-AI/.github/.github/workflows/cpp-workflow.yml@v1
     with:
       deploy: 'false'
-      ros_distro: '["noetic"]'
+      components: '["world_launcher", "emergency_button", "emissive_property_controller", "battery_station","remove_object","spawn_model"]'
+      custom_requirements: curl -fsSL http://packages.osrfoundation.org/gazebo.key | apt-key add - ;add-apt-repository "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main"
     secrets:
       auto_commit_user: ${{ secrets.RAISE_BOT_COMMIT_USER }}
       auto_commit_mail: ${{ secrets.RAISE_BOT_COMMIT_MAIL }}
-      auto_commit_pwd: ${{ secrets.RAISE_BOT_COMMIT_PASSWORD }}
       registry_user: ${{ secrets.PORTUS_APP_USER }}
       registry_password: ${{ secrets.PORTUS_APP_TOKEN }}
       nexus_publisher_user: ${{ secrets.NEXUS_PUBLISHER_USR }}
       nexus_publisher_password: ${{ secrets.NEXUS_PUBLISHER_PWD }}
-      aws_sqs_rosdep_access_key: ${{ secrets.AWS_SQS_ROSDEP_ACCESS_KEY }}
-      aws_sqs_rosdep_secret_access_key: ${{ secrets.AWS_SQS_ROSDEP_SECRET_ACCESS_KEY }}
       gh_token: ${{ secrets.GITHUB_TOKEN }}
       sonar_token: ${{ secrets.SONAR_TOKEN }}
       
