@@ -1,174 +1,82 @@
-/*
- * Copyright (C) 2022 Open Source Robotics Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
-#include <ignition/sensors/config.hh>
+#ifndef MOVAILIDAR_HH_
+#define MOVAILIDAR_HH_
 
-/*
- * Copyright (C) 2018 Open Source Robotics Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
-*/
-#ifndef IGNITION_SENSORS_MovaiLidar_HH_
-#define IGNITION_SENSORS_MovaiLidar_HH_
-
-#include <memory>
-#include <string>
-
-#include <sdf/sdf.hh>
-
-#include <ignition/common/SuppressWarning.hh>
-
-// TODO(louise) Remove these pragmas once ign-rendering is disabling the
-// warnings
-#ifdef _WIN32
-#pragma warning(push)
-#pragma warning(disable: 4251)
-#endif
-#include <ignition/rendering/GpuRays.hh>
-#ifdef _WIN32
-#pragma warning(pop)
-#endif
-
-#include <ignition/sensors/gpu_lidar/Export.hh>
-#include <ignition/sensors/RenderingEvents.hh>
-#include <ignition/sensors/Lidar.hh>
-
-using namespace ignition::sensors;
+#include <ignition/gazebo/System.hh>
+#include <ignition/transport/Node.hh>
+#include "ignition/gazebo/Model.hh"
+#include <ignition/common/Profiler.hh>
+#include "ignition/gazebo/components/Name.hh"
+#include "ignition/gazebo/components/World.hh"
 
 
-namespace custom
+using namespace ignition;
+using namespace gazebo;
+using namespace systems;
+
+/// \brief MovaiLidar Plugin that can publish a scan/points message with random intensities
+class MovaiLidar : public ignition::gazebo::System,
+    public ignition::gazebo::ISystemConfigure,
+    public ignition::gazebo::ISystemUpdate
 {
-  // namespace sensors
-  // {
-    // Inline bracket to help doxygen filtering.
-    // inline namespace IGNITION_SENSORS_VERSION_NAMESPACE {
-    //
-    /// \brief forward declarations
-    class MovaiLidarPrivate;
+  /// \brief Constructor
+  public: MovaiLidar();
 
-    /// \brief GpuLidar Sensor Class
-    ///
-    ///   This class creates laser scans using the GPU. It's measures the range
-    ///   from the origin of the center to points on the visual geometry in the
-    ///   scene.
-    ///
-    ///   It offers both an ignition-transport interface and a direct C++ API
-    ///   to access the image data. The API works by setting a callback to be
-    ///   called with image data.
-    class IGNITION_SENSORS_GPU_LIDAR_VISIBLE MovaiLidar : public Lidar
-    {
-      /// \brief constructor
-      public: MovaiLidar();
+  /// \brief Destructor
+  public: ~MovaiLidar() override;
 
-      /// \brief destructor
-      public: virtual ~MovaiLidar();
 
-      /// \brief Force the sensor to generate data
-      /// \param[in] _now The current time
-      /// \return true if the update was successfull
-      public: virtual bool Update(
-        const std::chrono::steady_clock::duration &_now) override;
 
-      /// \brief Initialize values in the sensor
-      /// \return True on success
-      public: virtual bool Init() override;
+  //////////////////////////////////////////////////
+  /// \brief This function is called when the model attached is loaded in the simulation
+  /// \param[in] _entity Object model that this plugin is attached 
+  /// \param[in] _sdf SDF element of the plugin in the model attached 
+  /// \param[in] _ecm Entity Component Manager
+  public: void Configure(const Entity &_entity,
+                           const std::shared_ptr<const sdf::Element> &_sdf,
+                           EntityComponentManager &_ecm,
+                           EventManager &_eventMgr) override;
 
-      /// \brief Load the sensor based on data from an sdf::Sensor object.
-      /// \param[in] _sdf SDF Sensor parameters.
-      /// \return true if loading was successful
-      public: virtual bool Load(const sdf::Sensor &_sdf) override;
-      public: bool NewLoad(const sdf::Sensor &_sdf);
+  //////////////////////////////////////////////////
+  /// \brief This function is called in each simulation step update.
+  /// \param[in] _info Simulation state information
+  /// \param[in] _ecm Entity Component Manager
+  public: void Update(const ignition::gazebo::UpdateInfo &_info,
+              ignition::gazebo::EntityComponentManager &_ecm);
 
-      /// \brief Load sensor sata from SDF
-      /// \param[in] _sdf SDF used
-      /// \return True on success
-      public: virtual bool Load(sdf::ElementPtr _sdf) override;
+  //////////////////////////////////////////////////
+  /// \brief Callbacks for scan/points topics subscription
+  /// \param[in] _msg Message
+  private: void On3dScan(const ignition::msgs::PointCloudPacked &_msg);
+  private: void On2dScan(const ignition::msgs::LaserScan &_msg);
 
-      /// \brief Create Lidar sensor
-      public: virtual bool CreateLidar() override;
+  /// \brief Callbacks for control topic subscription
+  /// \param[in] _msg Message that dictates if intensities are published
+  private: void OnIntensityFlag(const ignition::msgs::Boolean &_msg);
+  
+  /// \brief Declare the needed publishers
+  private: ignition::transport::Node::Publisher pubScan;
+  private: ignition::transport::Node::Publisher pubPoints;
 
-      /// \brief Gets if sensor is horizontal
-      /// \return True if horizontal, false if not
-      public: bool IsHorizontal() const;
+  /// \brief Node responsible for subring and publishing desired topics
+  private: ignition::transport::Node node;
 
-      /// \brief Makes possible to change sensor scene
-      /// \param[in] _scene used with the sensor
-      public: void SetScene(ignition::rendering::ScenePtr _scene) override;
+  /// \brief Messages to send
+  private: ignition::msgs::PointCloudPacked intensityPoints;
+  private: ignition::msgs::LaserScan intensityScan;
+  
 
-      /// \brief Remove sensor from scene
-      /// \param[in] _scene used with the sensor
-      public: void RemoveGpuRays(ignition::rendering::ScenePtr _scene);
+  /// \brief Name of the model to which the plugin is attached
+   public: std::string  objectName;
 
-      /// \brief Get Gpu Rays object used in the sensor
-      /// \return Pointer to ignition::rendering::GpuRays
-      public: ignition::rendering::GpuRaysPtr GpuRays() const;
+  /// \brief World name
+  public: std::string  worldName;
+  
+  /// \brief Model entity that this plugin is attached
+  public: Model model{kNullEntity};
 
-      /// \brief Return the ratio of horizontal ray count to vertical ray
-      /// count.
-      ///
-      /// A ray count is the number of simulated rays. Whereas a range count
-      /// is the total number of data points returned. When range count
-      /// != ray count, then values are interpolated between rays.
-      public: double RayCountRatio() const;
+  /// \brief Control flag
+  public: bool allowIntensities{false};
 
-      /// \brief Get the horizontal field of view of the laser sensor.
-      /// \return The horizontal field of view of the laser sensor.
-      public: ignition::math::Angle HFOV() const;
-
-      /// \brief Get the vertical field-of-view.
-      /// \return Vertical field of view.
-      public: ignition::math::Angle VFOV() const;
-
-      /// \brief Check if there are any subscribers
-      /// \return True if there are subscribers, false otherwise
-      /// \todo(iche033) Make this function virtual on Garden
-      public: bool HasConnections() const;
-
-      /// \brief Connect function pointer to internal GpuRays callback
-      /// \return ignition::common::Connection pointer
-      public: virtual ignition::common::ConnectionPtr ConnectNewLidarFrame(
-          std::function<void(const float *_scan, unsigned int _width,
-                  unsigned int _heighti, unsigned int _channels,
-                  const std::string &/*_format*/)> _subscriber) override;
-
-      /// \brief Connect function pointer to internal GpuRays callback
-      /// \return ignition::common::Connection pointer
-      private: void OnNewLidarFrame(const float *_scan, unsigned int _width,
-                  unsigned int _heighti, unsigned int _channels,
-                  const std::string &_format);
-
-      IGN_COMMON_WARN_IGNORE__DLL_INTERFACE_MISSING
-      /// \brief Data pointer for private data
-      /// \internal
-      private: std::unique_ptr<MovaiLidarPrivate> dataPtr;
-      IGN_COMMON_WARN_RESUME__DLL_INTERFACE_MISSING
-    };
-    // }
-  // }
-}
+};
 
 #endif
