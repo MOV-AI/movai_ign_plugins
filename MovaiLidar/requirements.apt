@@ -1,0 +1,7 @@
+libignition-plugin-dev
+libignition-transport11-dev
+libignition-gazebo6-dev
+libignition-sensors6
+libignition-rendering6
+libignition-msgs8
+
