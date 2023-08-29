@@ -1,4 +1,4 @@
-movai-ign-plugin-movai-lidar (1.0.2-1) UNRELEASED; urgency=medium
+movai-ign-plugin-movai-lidar (1.0.2-2) UNRELEASED; urgency=medium
 
 
   [ Filipe ]
@@ -9,5 +9,6 @@ movai-ign-plugin-movai-lidar (1.0.2-1) UNRELEASED; urgency=medium
   * bump version
   * bump version
   * bump version
+  * bump version
 
- -- root <root@159955926abb>  Wed, 18 Jan 2023 14:25:35 +0000
+ -- root <root@e36f78679fc4>  Tue, 29 Aug 2023 11:33:28 +0000

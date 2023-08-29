@@ -1,4 +1,4 @@
-movai-ign-plugin-spawn-model (1.0.2-2) UNRELEASED; urgency=medium
+movai-ign-plugin-spawn-model (1.0.2-3) UNRELEASED; urgency=medium
 
 
   [ Filipe ]
@@ -11,5 +11,6 @@ movai-ign-plugin-spawn-model (1.0.2-2) UNRELEASED; urgency=medium
   * bump version
   * bump version
   * bump version
+  * bump version
 
- -- root <root@d9626a456777>  Wed, 19 Jul 2023 13:37:05 +0000
+ -- root <root@e36f78679fc4>  Tue, 29 Aug 2023 11:33:28 +0000
