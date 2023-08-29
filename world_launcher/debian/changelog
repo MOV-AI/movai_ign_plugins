@@ -1,4 +1,4 @@
-movai-ign-plugin-world-launcher (1.0.2-3) UNRELEASED; urgency=medium
+movai-ign-plugin-world-launcher (1.0.2-4) UNRELEASED; urgency=medium
 
 
   [ Filipe ]
@@ -27,5 +27,6 @@ movai-ign-plugin-world-launcher (1.0.2-3) UNRELEASED; urgency=medium
   * bump version
   * bump version
   * bump version
+  * bump version
 
- -- root <root@e36f78679fc4>  Tue, 29 Aug 2023 11:33:28 +0000
+ -- root <root@10a928c0d703>  Tue, 29 Aug 2023 13:25:03 +0000
