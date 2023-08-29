@@ -1,0 +1,11 @@
+Source: movai-ign-plugin-movai-lidar
+Maintainer: Bernardo Dias<bernardo.dias@mov.ai>
+Section: unknown
+Priority: optional
+Build-Depends: unzip, debhelper (>= 7.4.3)
+Standards-Version: 3.9.1
+
+Package: movai-ign-plugin-movai-lidar
+Architecture: all
+Depends: ${misc:Depends}
+Description: Generate fake intensities
