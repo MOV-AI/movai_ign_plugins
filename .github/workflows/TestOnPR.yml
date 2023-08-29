@@ -10,7 +10,7 @@ on:
 
 jobs:
   CI:
-    uses: MOV-AI/.github/.github/workflows/cpp-workflow.yml@v1
+    uses: MOV-AI/.github/.github/workflows/cpp-workflow.yml@v2
     with:
       deploy: 'false'
       components: '["world_launcher", "emergency_button", "emissive_property_controller", "battery_station","remove_object","spawn_model","MovaiLidar"]'
