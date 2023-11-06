@@ -120,15 +120,19 @@ void EmissivePropertyController::PerformRenderingOperations()
     return;
   }
 
-  // Creating the material and setting the Color to Ambient, Diffuse and Emissive proprieties
-  ignition::rendering::MaterialPtr material = this->scene->CreateMaterial();
+  ignition::rendering::MaterialPtr material = visual->Material();
+  if (nullptr == material)
+  {
+    // Creating the material and setting the Color to Ambient, Diffuse and Emissive proprieties
+    material = this->scene->CreateMaterial();
+  }
+
   material->SetAmbient(this->newEmissive);
   material->SetDiffuse(this->newEmissive);
   material->SetEmissive(this->newEmissive);
-
   // Applying the material to the selected visual link.
   visual->SetMaterial(material);
-
+  material->~Material();
   this->materialRequest = false;
 }
 
