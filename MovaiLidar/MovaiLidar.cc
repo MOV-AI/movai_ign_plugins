@@ -330,7 +330,6 @@ if (!_sdf->HasElement("frameName")) {
         this->sensor_id = _sdf->Get<std::string>("sensorId");
     }
 
-    this->laser_connect_count_ = 0;
   // Get the component's name to create the scan and points topic subscribers
   std::string objectName = _ecm.Component<components::Name>(_entity)->Data();
 

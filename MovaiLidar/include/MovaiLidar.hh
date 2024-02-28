@@ -130,7 +130,7 @@ class MovaiLidar : public ignition::gazebo::System,
     std::string sensor_id;
     cv::Mat cam_feed[4];
     std::mutex mtx;
-
+    uint64_t current_time;
 };
 
 #endif
