@@ -5,3 +5,4 @@ libignition-sensors6
 libignition-rendering6
 libignition-msgs8
 libopencv-dev
+libpcl-dev
