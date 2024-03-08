@@ -1,1 +1,2 @@
 ./build/libMovaiLidar.so /movai_ign_plugins/system/
+./network /movai_ign_plugins/system
