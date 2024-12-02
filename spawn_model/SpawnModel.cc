@@ -1,5 +1,6 @@
 #include <ignition/plugin/Register.hh>
 
+
 #include "SpawnModel.hh"
 
 using namespace ignition;
@@ -46,13 +47,24 @@ void SpawnModel::Configure(const Entity &_entity,
   // - "model_array" -> name of the models to spawn
   std::string spawn_topic = "/world/" + worldName + "/create";
   std::string array_topic = "/world/" + worldName + "/model_array";
+  std::string move_model_name_topic = "/world/" + worldName + "/move_model_name";
+  std::string move_topic = "/world/" + worldName + "/move_model";
+  std::string req_model_pose_topic = "/world/" + worldName + "/req_model_pose";
+  std::string res_model_pose_topic = "/world/" + worldName + "/res_model_pose";
 
   // Subscribe to the spawn topics
   this->node.Subscribe(spawn_topic, &SpawnModel::OnSpawnCmd,
                                 this);
   this->node.Subscribe(array_topic, &SpawnModel::OnModelArray,
                                 this);
-
+  this->node.Subscribe(move_topic, &SpawnModel::OnMoveCmd,
+                                this);
+  // Subscribe to the moving models related topics
+  this->node.Subscribe(move_model_name_topic, &SpawnModel::OnModelName,
+                                this);
+  this->node.Subscribe(req_model_pose_topic, &SpawnModel::OnModelPoseReq,
+                                this);
+  this->PosePub = this->node.Advertise<ignition::msgs::Pose>(res_model_pose_topic);
 }
 
 //////////////////////////////////////////////////
@@ -110,9 +122,81 @@ void SpawnModel::Update(const ignition::gazebo::UpdateInfo &_info,
         this->model_name.clear();
       }
       }
+    // Update model to new pose
+    if (this->move_model_name_ready){
+      ignition::msgs::Pose req1;
+      ignition::msgs::Boolean res1;
+      std::vector<std::string> v;
+      auto worldEntity = _ecm.EntityByComponents(components::World());
+      const auto models = _ecm.EntitiesByComponents(components::ParentEntity(worldEntity), components::Model());
+      for(const auto &m: models){
+            v.push_back(_ecm.Component<components::Name>(m)->Data());
+      }
+      if (std::find(v.begin(), v.end(), this->move_model_name) != v.end()){
+        req1.set_name(this->move_model_name);
 
+        math::Quaterniond q (this->qw,this->qx,this->qy,this->qz);
+        ignition::msgs::Set(req1.mutable_position(), math::Vector3d( this->x, this->y, this->z));
+        ignition::msgs::Set(req1.mutable_orientation(), q);
+        std::string poseCmdService("/world/" + this->worldName + "/set_pose");
+        this->node.Request(poseCmdService, req1, timeout, res1, result);
+        this->move_model_name_ready = false;
+      }
+    }
+  }
+// Necessary for retrieving the pose of a specified model
+void SpawnModel::PostUpdate(const UpdateInfo &_info,
+    const EntityComponentManager &_ecm)
+{
+  IGN_PROFILE("SpawnModel::PostUpdate");
+  if(!this->search_model.empty()){
+    auto worldEntity = _ecm.EntityByComponents(components::World());
+    const auto models = _ecm.EntitiesByComponents(components::ParentEntity(worldEntity), components::Model());
+    for(const auto &m: models){
+          if (this->search_model == _ecm.Component<components::Name>(m)->Data()){
+            math::Pose3 pose = _ecm.Component<components::Pose>(m)->Data();
+            this->PosePub.Publish(ignition::msgs::Convert(pose));
+            this->search_model = "";
+            break;
+          }
+    }
+    
+  }else{
+    return;
+  }
+  //this->dataPtr->UpdateOdometry(_info, _ecm);
 }
 
+// //////////////////////////////////////////////////
+/// \brief Callback for moving model command
+/// \param[in] _msg Message
+void SpawnModel::OnMoveCmd(const ignition::msgs::Pose &_msg)
+{   
+    this->x = _msg.position().x();
+    this->y = _msg.position().y();
+    this->z = _msg.position().z();
+    this->qw = _msg.orientation().w();
+    this->qx = _msg.orientation().x();
+    this->qy = _msg.orientation().y();
+    this->qz = _msg.orientation().z();
+}
+
+void SpawnModel::OnModelName(const ignition::msgs::StringMsg &_msg)
+{   
+    // Check if the received data is not empty
+    if (!_msg.data().empty()){
+      this->move_model_name = _msg.data();
+      this-> move_model_name_ready = true;
+    }
+}
+
+void SpawnModel::OnModelPoseReq(const ignition::msgs::StringMsg &_msg)
+{   
+    // Check if the received data is not empty
+    if (!_msg.data().empty()){
+      this->search_model = _msg.data();
+    }
+}
 
 // //////////////////////////////////////////////////
 /// \brief Callback for model PoseArray message subscription
@@ -126,6 +210,7 @@ void SpawnModel::OnSpawnCmd(const ignition::msgs::Pose_V &_msg)
       }
          this->spawnObject = true; 
 }
+
 
 // //////////////////////////////////////////////////
 /// \brief Callback for model names message subscription
@@ -149,7 +234,8 @@ void SpawnModel::OnModelArray(const ignition::msgs::StringMsg &_msg)
 IGNITION_ADD_PLUGIN(SpawnModel,
                     ignition::gazebo::System,
                     SpawnModel::ISystemConfigure,
-                    SpawnModel::ISystemUpdate)
+                    SpawnModel::ISystemUpdate,
+                    SpawnModel::ISystemPostUpdate)
 
 IGNITION_ADD_PLUGIN_ALIAS(SpawnModel,
                           "ignition::gazebo::systems::SpawnModel")
