@@ -1,4 +1,4 @@
-movai-ign-plugin-battery-station (1.0.2-6) UNRELEASED; urgency=medium
+movai-ign-plugin-battery-station (1.0.2-7) UNRELEASED; urgency=medium
 
 
   [ Filipe ]
@@ -15,5 +15,6 @@ movai-ign-plugin-battery-station (1.0.2-6) UNRELEASED; urgency=medium
   * bump version
   * bump version
   * bump version
+  * bump version
 
- -- root <root@b8ec85d88ce4>  Fri, 08 Mar 2024 18:54:06 +0000
+ -- root <root@26e0e065d8eb>  Fri, 06 Dec 2024 17:21:26 +0000
