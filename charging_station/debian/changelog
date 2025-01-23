@@ -1,0 +1,13 @@
+movai-ign-plugin-charging-station (1.0.2-1) UNRELEASED; urgency=medium
+
+
+  [ Filipe ]
+  * Initial release. (Closes: #XXXXXX)
+
+  [ root ]
+  * bump version
+  * bump version
+  * bump version
+  * bump version
+
+ -- root <root@159955926abb>  Wed, 18 Jan 2023 14:25:34 +0000
