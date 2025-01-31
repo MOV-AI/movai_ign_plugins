@@ -6,6 +6,7 @@ using namespace ignition;
 using namespace gazebo;
 using namespace systems;
 
+
 /////////////////////////////////////////////////
 /// \brief Constructor
 ChargingStation::ChargingStation() = default;
@@ -33,7 +34,7 @@ void ChargingStation::Configure(const Entity &_entity,
     return;
   }
 
-  // Get the battery name used in the robot. This name is a Ignition Gazebo linear battery plugin name
+  // Get the robot name(s) associated with the charging station.
   this->robotName = _sdf->Get<std::string>("robot_names");
   if (this->robotName.empty())
   {
@@ -41,6 +42,7 @@ void ChargingStation::Configure(const Entity &_entity,
            << "Failed to initialize.";
     return;
   }
+  // Get the minimum distance between the robot and the "center" of the charging station to decide to send the charging signal  
   this->tolerance = _sdf->Get<std::string>("tolerance");
   if (this->tolerance.empty())
   {
@@ -54,7 +56,7 @@ void ChargingStation::Configure(const Entity &_entity,
   if (worldEntity == kNullEntity)
     return;
 
-  // Get the components name to create the contact topic subscriber
+  // Get the components name to publish the signal for the robot to start charging
   this->ent = this->model.Entity();
   std::string chargeName = _ecm.Component<components::Name>(_entity)->Data();
   this->dockLink = _ecm.ChildrenByComponents(_entity, components::Link());
@@ -62,18 +64,23 @@ void ChargingStation::Configure(const Entity &_entity,
   std::vector<std::string> topics;
   std::string delimiter = ",";
   size_t pos = 0;
-  std::string token;
-  ignition::transport::Node::Publisher publisher;
+  std::string token, start_topic, stop_topic;
+  ignition::transport::Node::Publisher publisher_start, publisher_stop;
 
-  while((pos = this->robotName.find(delimiter)) != std::string::npos){
-    token = this->robotName.substr(0,pos);
-    this->robots.push_back(token);
-    publisher = this->node.Advertise<ignition::msgs::Boolean>("/world/" + worldName + "/model/" + chargeName +"/"+ token);
-    this->publishers.push_back(publisher);
-    this->robotToPublisher.insert({token, publisher});
-    this->robotName.erase(0, pos + delimiter.length());
+  // get one or more robot names to create the charging publisher
+  if (this->robotName.find(delimiter) == std::string::npos){
+    this->PopulateMap(this->robotName);
   }
-  
+  else{
+    while((pos = this->robotName.find(delimiter)) != std::string::npos){
+      token = this->robotName.substr(0,pos);
+      this->PopulateMap(token);
+      this->robotName.erase(0, pos + delimiter.length());
+    }
+
+  }
+
+  // optional subscriber to start the charging station plugin logic
   this->node.Subscribe("/start_docking", &ChargingStation::OnDockCmd, this);
 
   ignmsg << "ChargingStation Started" << std::endl;
@@ -93,6 +100,7 @@ void ChargingStation::Update(const ignition::gazebo::UpdateInfo &_info,
     return;
 
   if(this->checkDocking){
+    
     const auto dock_pose_ = _ecm.Component<components::Pose>(this->ent)->Data();
     const auto link_ = _ecm.Component<components::Pose>(this->dockLink[0]); 
     ignition::math::Pose3d dockPose = dock_pose_ - link_->Data();
@@ -100,77 +108,83 @@ void ChargingStation::Update(const ignition::gazebo::UpdateInfo &_info,
     auto worldEntity = _ecm.EntityByComponents(components::World());
     const auto models = _ecm.EntitiesByComponents(components::ParentEntity(worldEntity), components::Model());
     for(const auto &m: models){
+      // create a map where the key is a robot name and the value is its pose
         if((std::find(this->robots.begin(), this->robots.end(),_ecm.Component<components::Name>(m)->Data()))!= this->robots.end()){
           robotPoses.insert({_ecm.Component<components::Name>(m)->Data(), _ecm.Component<components::Pose>(m)->Data()});
         }
     }
+    // Calculate distance between robots and the charging station
     std::vector<std::string> t = ComputeDistances(robotPoses, dockPose);
     if (!t.empty()){
       for(int i = 0; i<t.size();i++){
-        this->robotToPublisher[t[i]].Publish(ignition::msgs::Convert(true));
+        // if a robot is close enough to a specific link of the charging station check if we already sent the charging signal. If not, publish it
+        if(!this->robotsMap[t[i]].getLastMsg()){
+          this->robotsMap[t[i]].getTopicStart().Publish(ignition::msgs::Convert(true));
+          this->robotsMap[t[i]].setLastMsg(true);
+        }
       }
     }else{
+      // if the charging signal was sent previously, but the robot is no longer in the desired range of the charging station, send a signal to stop charging
+      for(auto &pair: this->robotsMap){
+        if(pair.second.getLastMsg()){
+          pair.second.getTopicStop().Publish(ignition::msgs::Convert(true));
+          pair.second.setLastMsg(false);
+        }
+      }
       return;
     }
 
   }
 }
-
 //////////////////////////////////////////////////
-/// \brief Callback for contact subscription
+/// \brief Callback for start docking logic subscription
 /// \param[in] _msg Message
 void ChargingStation::OnDockCmd(const ignition::msgs::Boolean &_msg){
   this->checkDocking = false;
   if(_msg.data()){
     this->checkDocking = true;
   }
-
-
 }
-
+/////////////////////////////////////////////////
+/// \brief Function used to compute the distance between the robot and the charging station
+/// \param[in] robotPoses map of all the robots' pose in the world frame
+/// \param[in] dockPose Dock pose in the world frame
+/// \return Returns a Vector of robot names that are very close to the charging station
 std::vector<std::string> ChargingStation::ComputeDistances(std::map<std::string, math::Pose3d>robotPoses, ignition::math::Pose3d dockPose){
 
   double dock_x = dockPose.X();
   double dock_y = dockPose.Y();
   double robot_x, robot_y, dist_x, dist_y, dist_, dist;
 
-  //ignwarn << "dock position is " << dock_x << " " << dock_y <<std::endl;
   std::vector<std::string> result;
 
   for(const auto &pair : robotPoses){
     dist_x = dock_x - pair.second.X();
     dist_y = dock_y - pair.second.Y();
-    //ignwarn << "robot position is " << pair.second.X() << " " << pair.second.Y() <<std::endl;
     dist_ = pow(dist_x, 2) + pow(dist_y, 2);
     dist = sqrt(dist_);
-    //ignerr << dist << "for " << pair.first << std::endl;
     if (abs(dist) < std::stod(this->tolerance)){
-      
       result.push_back(pair.first);
     }
   }
 
   return result;
 
-} 
+}
 
 /////////////////////////////////////////////////
-/// \brief Function used to split a string by a delimiter character.
-/// \param[in] str std::string to be splited.
-/// \param[in] delim char to delimiter the strings separation.
-/// \return Returns a Vector of strings. std::vector<std::string>
-std::vector<std::string> ChargingStation::SplitMsg(std::string const &str, const char delim)
-{
-  size_t start;
-  size_t end = 0;
-  std::vector<std::string> out;
+/// \brief Function used to instatiate, populate and associate UserVars to a robot
+/// \param[in] token name of the robot
+void ChargingStation::PopulateMap(std::string &token){
 
-  while ((start = str.find_first_not_of(delim, end)) != std::string::npos)
-  {
-    end = str.find(delim, start);
-    out.push_back(str.substr(start, end - start));
-  }
-  return out;
+  std::string start_topic, stop_topic;
+  ignition::transport::Node::Publisher publisher_start, publisher_stop;
+  start_topic = "/model/" + token + "/battery/linear_battery/recharge/start";
+  stop_topic = "/model/" + token + "/battery/linear_battery/recharge/stop";
+  publisher_start = this->node.Advertise<ignition::msgs::Boolean>(start_topic);
+  publisher_stop = this->node.Advertise<ignition::msgs::Boolean>(stop_topic);
+  this->robots.push_back(token);
+  this->robotsMap.insert({token, UserVars(publisher_start,publisher_stop, false)});
 }
 
 
