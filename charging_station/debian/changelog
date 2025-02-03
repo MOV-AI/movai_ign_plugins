@@ -1,4 +1,4 @@
-movai-ign-plugin-charging-station (1.0.2-1) UNRELEASED; urgency=medium
+movai-ign-plugin-charging-station (1.0.2-2) UNRELEASED; urgency=medium
 
 
   [ Filipe ]
@@ -9,5 +9,6 @@ movai-ign-plugin-charging-station (1.0.2-1) UNRELEASED; urgency=medium
   * bump version
   * bump version
   * bump version
+  * bump version
 
- -- root <root@159955926abb>  Wed, 18 Jan 2023 14:25:34 +0000
+ -- root <root@479f1603697d>  Mon, 03 Feb 2025 19:42:10 +0000

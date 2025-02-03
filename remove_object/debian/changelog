@@ -1,4 +1,4 @@
-movai-ign-plugin-remove-object (1.0.2-7) UNRELEASED; urgency=medium
+movai-ign-plugin-remove-object (1.0.2-8) UNRELEASED; urgency=medium
 
 
   [ Filipe ]
@@ -16,5 +16,6 @@ movai-ign-plugin-remove-object (1.0.2-7) UNRELEASED; urgency=medium
   * bump version
   * bump version
   * bump version
+  * bump version
 
- -- root <root@26e0e065d8eb>  Fri, 06 Dec 2024 17:21:26 +0000
+ -- root <root@479f1603697d>  Mon, 03 Feb 2025 19:42:10 +0000
