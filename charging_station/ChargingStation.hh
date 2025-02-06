@@ -15,6 +15,9 @@
 #include "ignition/gazebo/components/ParentEntity.hh"
 #include <ignition/msgs/Utility.hh>
 #include<math.h>
+#include<iostream>
+#include<Eigen/Dense>
+#include<cmath>
 
 using namespace ignition;
 using namespace gazebo;
@@ -95,6 +98,23 @@ class ChargingStation : public ignition::gazebo::System,
   /// \param[in] token name of the robot
   private: void PopulateMap(std::string &token);
 
+
+  /////////////////////////////////////////////////
+  /// \brief Function used to create a rotation matrix based on roll pitch yaw
+  /// \param[in] roll rotation around the x-axis
+  /// \param[in] pitch rotation around the y-axis
+  /// \param[in] yaw rotation around the z-axis
+  private: Eigen::Matrix3d rpyToRotationMatrix(double roll, double pitch, double yaw);
+
+
+  /////////////////////////////////////////////////
+  /// \brief Function used to create an homogeneous matrix based on translation values and a rotation matrix
+  /// \param[in] x translation in x-axis
+  /// \param[in] y translation in y-axis
+  /// \param[in] z translation in z-axis
+  /// \param[in] mat rotation matrix
+  private: Eigen::Matrix4d createHomogenousMat(double x, double y, double z, Eigen::Matrix3d mat);
+
   /// \brief Ignition communication node.
   public: ignition::transport::Node node;
 
@@ -125,6 +145,12 @@ class ChargingStation : public ignition::gazebo::System,
   /// \brief variable to read the list of robots from the sdf
   public: std::string robotName;
 
+  /// \brief variable to read the robot frame from the sdf
+  public: std::string robotFrame;
+
+  /// \brief pose of robotFrame
+  public: ignition::math::Pose3d poseLink;
+
   /// \brief minimum distance beteen the robot and the charging station
   public: std::string tolerance;
 
@@ -142,6 +168,7 @@ class ChargingStation : public ignition::gazebo::System,
 
   /// \brief Map that holds the robot name and the variables associated with it
   public: std::map<std::string, UserVars> robotsMap;
+
 };
 
 

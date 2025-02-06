@@ -10,6 +10,7 @@ set (CMAKE_AUTOMOC ON)
 find_package(ignition-plugin1 REQUIRED COMPONENTS register)
 find_package(ignition-gazebo6 REQUIRED)
 find_package(ignition-transport11 REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 # Set Mov.Ai Ignition docker plugins library directory
 # set(CMAKE_LIBRARY_OUTPUT_DIRECTORY /movai_ign_plugins/system)
@@ -21,4 +22,6 @@ target_link_libraries(ChargingStation
   PRIVATE 
     ignition-plugin1::ignition-plugin1
     ignition-gazebo6::ignition-gazebo6
+    Eigen3::Eigen
+
 )
