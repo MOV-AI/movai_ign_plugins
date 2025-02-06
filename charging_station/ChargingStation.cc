@@ -51,6 +51,14 @@ void ChargingStation::Configure(const Entity &_entity,
     return;
   }
 
+  // Get the robot frame to use in the distance computation 
+  this->robotFrame = _sdf->Get<std::string>("robot_frame");
+  if (this->robotFrame.empty())
+  {
+    ignwarn << "ChargingStation found an empty robotFrame parameter"
+           << " will use base link as default.";
+  }
+
   // Get the world name in the simulation
   auto worldEntity = _ecm.EntityByComponents(components::World());
   if (worldEntity == kNullEntity)
@@ -59,6 +67,7 @@ void ChargingStation::Configure(const Entity &_entity,
   // Get the components name to publish the signal for the robot to start charging
   this->ent = this->model.Entity();
   std::string chargeName = _ecm.Component<components::Name>(_entity)->Data();
+
   this->dockLink = _ecm.ChildrenByComponents(_entity, components::Link());
   std::string worldName = _ecm.Component<components::Name>(worldEntity)->Data();
   std::vector<std::string> topics;
@@ -79,6 +88,21 @@ void ChargingStation::Configure(const Entity &_entity,
     }
 
   }
+
+  // Check if we want to check distance from the charging station to a specific robot frame. If not we use the base_link
+  Entity modelEntity  = _ecm.EntityByComponents(components::Name(this->robots[0]));
+
+  if(!this->robotFrame.empty()){
+    Entity linkEntity =  _ecm.EntityByComponents(components::Name(this->robotFrame), components::ParentEntity(modelEntity));
+    this->poseLink = _ecm.Component<components::Pose>(linkEntity)->Data();
+   
+  }else{
+    
+    ignition::math::Pose3d emptyPose(0.0,0.0,0.0,0.0,0.0,0.0);
+    this->poseLink = emptyPose;
+  }
+
+
 
   // optional subscriber to start the charging station plugin logic
   this->node.Subscribe("/start_docking", &ChargingStation::OnDockCmd, this);
@@ -152,18 +176,40 @@ void ChargingStation::OnDockCmd(const ignition::msgs::Boolean &_msg){
 /// \return Returns a Vector of robot names that are very close to the charging station
 std::vector<std::string> ChargingStation::ComputeDistances(std::map<std::string, math::Pose3d>robotPoses, ignition::math::Pose3d dockPose){
 
-  double dock_x = dockPose.X();
-  double dock_y = dockPose.Y();
-  double robot_x, robot_y, dist_x, dist_y, dist_, dist;
-
+  // Norm of the distance between the charging station and a given robot
+  double dist;
+  // vector of names of robots that are close enough to this charging station
   std::vector<std::string> result;
 
+  // iterate through robot map
   for(const auto &pair : robotPoses){
-    dist_x = dock_x - pair.second.X();
-    dist_y = dock_y - pair.second.Y();
-    dist_ = pow(dist_x, 2) + pow(dist_y, 2);
-    dist = sqrt(dist_);
-    if (abs(dist) < std::stod(this->tolerance)){
+
+    // Create a rotation matrix that converts the world frame into the robot frame
+    Eigen::Matrix3d robotRot = rpyToRotationMatrix(pair.second.Roll(),pair.second.Pitch(),pair.second.Yaw()); 
+
+    // Create a vector of the translation of the specific link in the robot frame
+    Eigen::Vector3d linkTranslation(this->poseLink.X(),this->poseLink.Y(),this->poseLink.Z());
+    
+    // Convert the link translation to the world frame
+    Eigen::Vector3d linkTranslationWorld = robotRot*(linkTranslation);
+
+    // Vector that holds the robot current position in the world frame
+    Eigen::Vector3d robotPosition(pair.second.X(),pair.second.Y(),pair.second.Z());
+    
+    // Get the position of the specific link
+    robotPosition += linkTranslationWorld;
+
+    // Vector that holds the dock position
+    Eigen::Vector3d dockPosition(dockPose.X(), dockPose.Y(), dockPose.Z());
+
+    // Distance between the dock and the robot link
+    Eigen::Vector3d result_vector = dockPosition-robotPosition;
+
+    // euclidian distance
+    dist = sqrt(pow(result_vector[0], 2) + pow(result_vector[1], 2));
+
+    // Return a list of robots that are closer to a charging station than a parameterizable threshold
+    if (dist < std::stod(this->tolerance)){
       result.push_back(pair.first);
     }
   }
@@ -187,6 +233,57 @@ void ChargingStation::PopulateMap(std::string &token){
   this->robotsMap.insert({token, UserVars(publisher_start,publisher_stop, false)});
 }
 
+/////////////////////////////////////////////////
+/// \brief Function used to create a rotation matrix based on roll pitch yaw
+/// \param[in] roll rotation around the x-axis
+/// \param[in] pitch rotation around the y-axis
+/// \param[in] yaw rotation around the z-axis
+Eigen::Matrix3d ChargingStation::rpyToRotationMatrix(double roll, double pitch, double yaw)
+{
+    // Create rotation matrices for each axis
+    Eigen::Matrix3d R_x, R_y, R_z;
+
+    // Roll (rotation around the x-axis)
+    R_x << 1, 0, 0,
+           0, cos(roll), -sin(roll),
+           0, sin(roll), cos(roll);
+
+    // Pitch (rotation around the y-axis)
+    R_y << cos(pitch), 0, sin(pitch),
+           0, 1, 0,
+           -sin(pitch), 0, cos(pitch);
+
+    // Yaw (rotation around the z-axis)
+    R_z << cos(yaw), -sin(yaw), 0,
+           sin(yaw), cos(yaw), 0,
+           0, 0, 1;
+
+    // Combine the rotations
+    Eigen::Matrix3d R = R_z * R_y * R_x;
+    
+    return R;
+}
+/////////////////////////////////////////////////
+/// \brief Function used to create an homogeneous matrix based on translation values and a rotation matrix
+/// \param[in] x translation in x-axis
+/// \param[in] y translation in y-axis
+/// \param[in] z translation in z-axis
+/// \param[in] mat rotation matrix
+Eigen::Matrix4d ChargingStation::createHomogenousMat(double x, double y, double z, Eigen::Matrix3d mat)
+{
+  Eigen::Vector3d translation(x, y, z);
+
+  // initialize homogeneous matrix with identity (diagonal is 1, rest is zeros)
+  Eigen::Matrix4d transformation = Eigen::Matrix4d::Identity();
+
+  // Replace the first 3x3 block by the rotation matrix
+  transformation.block<3, 3>(0, 0) = mat;
+
+  // Repalce the last column (with the exception of the last value) with the translation
+  transformation.block<3, 1>(0, 3) = translation;
+
+  return transformation;
+}
 
 // Register this plugin
 IGNITION_ADD_PLUGIN(ChargingStation,
