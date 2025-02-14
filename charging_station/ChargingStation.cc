@@ -26,8 +26,7 @@ void ChargingStation::Configure(const Entity &_entity,
     EventManager &/*_eventMgr*/)
 {
   // Get the model and check if it is valid
-  this->model = Model(_entity);
-  if (!this->model.Valid(_ecm))
+  if (!Model(_entity).Valid(_ecm))
   {
     ignerr << "ChargingStation plugin should be attached to a model entity. "
            << "Failed to initialize." << std::endl;
@@ -63,12 +62,9 @@ void ChargingStation::Configure(const Entity &_entity,
   auto worldEntity = _ecm.EntityByComponents(components::World());
   if (worldEntity == kNullEntity)
     return;
-
   // Get the components name to publish the signal for the robot to start charging
-  this->ent = this->model.Entity();
   std::string chargeName = _ecm.Component<components::Name>(_entity)->Data();
-
-  this->dockLink = _ecm.ChildrenByComponents(_entity, components::Link());
+  auto dockLink = _ecm.ChildrenByComponents(_entity, components::Link());
   std::string worldName = _ecm.Component<components::Name>(worldEntity)->Data();
   std::vector<std::string> topics;
   std::string delimiter = ",";
@@ -76,33 +72,48 @@ void ChargingStation::Configure(const Entity &_entity,
   std::string token, start_topic, stop_topic;
   ignition::transport::Node::Publisher publisher_start, publisher_stop;
 
-  // get one or more robot names to create the charging publisher
-  if (this->robotName.find(delimiter) == std::string::npos){
-    this->PopulateMap(this->robotName);
-  }
-  else{
-    while((pos = this->robotName.find(delimiter)) != std::string::npos){
-      token = this->robotName.substr(0,pos);
-      this->PopulateMap(token);
-      this->robotName.erase(0, pos + delimiter.length());
+  Entity robotEntity;
+  ignition::math::Pose3d poseLink;
+  Eigen::Vector3d transformedLink;
+
+  // Gather information relative to the robots specified in the sdf
+  do {
+    // Get individual robot names
+    token = this->robotName.substr(0, (pos = this->robotName.find(delimiter)));
+    robotEntity  = _ecm.EntityByComponents(components::Name(token));
+    // Verify user input
+    if(!Model(robotEntity).Valid(_ecm)){
+      ignerr << "Model" << token << " does not exist in this world. Please make sure to separate the names of the robots with a ',' " << std::endl;
+      continue;
     }
+    this->robots.push_back(token);
+    const auto robotPose = _ecm.Component<components::Pose>(robotEntity)->Data();
+    // Get alignment link entity
+    Entity linkEntity =  _ecm.EntityByComponents(components::Name(this->robotFrame), components::ParentEntity(robotEntity));
+    // Check link validity
+    if(!this->robotFrame.empty() && linkEntity != kNullEntity){
 
-  }
+      poseLink = _ecm.Component<components::Pose>(linkEntity)->Data();
 
-  // Check if we want to check distance from the charging station to a specific robot frame. If not we use the base_link
-  Entity modelEntity  = _ecm.EntityByComponents(components::Name(this->robots[0]));
-
-  if(!this->robotFrame.empty()){
-    Entity linkEntity =  _ecm.EntityByComponents(components::Name(this->robotFrame), components::ParentEntity(modelEntity));
-    this->poseLink = _ecm.Component<components::Pose>(linkEntity)->Data();
-   
-  }else{
+    }else{
+      ignwarn << "Robot frame does not exist or is not valid, Charging Station plugin will use the origin of the model" << std::endl;
+      ignition::math::Pose3d emptyPose(0.0,0.0,0.0,0.0,0.0,0.0);
+      poseLink = emptyPose;
+    }
+    // Transform the link position to the world frame
+    transformedLink = GetTransform(robotPose, poseLink);
+    PopulateMap(token, transformedLink);
     
-    ignition::math::Pose3d emptyPose(0.0,0.0,0.0,0.0,0.0,0.0);
-    this->poseLink = emptyPose;
-  }
+    this->robotName.erase(0, pos + delimiter.length());
+  } while (pos != std::string::npos);
 
-
+  // Get dock alignment point
+  ignition::math::Pose3d dockPose = _ecm.Component<components::Pose>(_entity)->Data();
+  const auto link_ = _ecm.Component<components::Pose>(dockLink[0]); 
+  const auto dockLinkPose = link_->Data();
+  Eigen::Vector3d dockLinkTransformed = GetTransform(dockPose, dockLinkPose);
+  Eigen::Vector3d dockPosition(dockPose.X(),dockPose.Y(),dockPose.Z());
+  this->dockPoint = dockPosition + dockLinkTransformed;
 
   // optional subscriber to start the charging station plugin logic
   this->node.Subscribe("/start_docking", &ChargingStation::OnDockCmd, this);
@@ -125,26 +136,28 @@ void ChargingStation::Update(const ignition::gazebo::UpdateInfo &_info,
 
   if(this->checkDocking){
     
-    const auto dock_pose_ = _ecm.Component<components::Pose>(this->ent)->Data();
-    const auto link_ = _ecm.Component<components::Pose>(this->dockLink[0]); 
-    ignition::math::Pose3d dockPose = dock_pose_ - link_->Data();
     std::map<std::string,math::Pose3d> robotPoses;
     auto worldEntity = _ecm.EntityByComponents(components::World());
     const auto models = _ecm.EntitiesByComponents(components::ParentEntity(worldEntity), components::Model());
+    // use unordered map less complex search 
+    std::unordered_set<std::string> robotSet(this->robots.begin(), this->robots.end());
     for(const auto &m: models){
-      // create a map where the key is a robot name and the value is its pose
-        if((std::find(this->robots.begin(), this->robots.end(),_ecm.Component<components::Name>(m)->Data()))!= this->robots.end()){
-          robotPoses.insert({_ecm.Component<components::Name>(m)->Data(), _ecm.Component<components::Pose>(m)->Data()});
-        }
+      auto modelName = _ecm.Component<components::Name>(m);
+      auto modelPose = _ecm.Component<components::Pose>(m);
+      //Populate robot poses map
+      if (modelName && modelPose && robotSet.find(modelName->Data())!= robotSet.end()){
+        robotPoses[modelName->Data()] = modelPose->Data();
+      }
+
     }
     // Calculate distance between robots and the charging station
-    std::vector<std::string> t = ComputeDistances(robotPoses, dockPose);
-    if (!t.empty()){
-      for(int i = 0; i<t.size();i++){
+    std::vector<std::string> nearbyRobots = ComputeDistances(robotPoses);
+    if (!nearbyRobots.empty()){
+      for(int i = 0; i<nearbyRobots.size();i++){
         // if a robot is close enough to a specific link of the charging station check if we already sent the charging signal. If not, publish it
-        if(!this->robotsMap[t[i]].getLastMsg()){
-          this->robotsMap[t[i]].getTopicStart().Publish(ignition::msgs::Convert(true));
-          this->robotsMap[t[i]].setLastMsg(true);
+        if(!this->robotsMap[nearbyRobots[i]].getLastMsg()){
+          this->robotsMap[nearbyRobots[i]].getTopicStart().Publish(ignition::msgs::Convert(true));
+          this->robotsMap[nearbyRobots[i]].setLastMsg(true);
         }
       }
     }else{
@@ -174,37 +187,22 @@ void ChargingStation::OnDockCmd(const ignition::msgs::Boolean &_msg){
 /// \param[in] robotPoses map of all the robots' pose in the world frame
 /// \param[in] dockPose Dock pose in the world frame
 /// \return Returns a Vector of robot names that are very close to the charging station
-std::vector<std::string> ChargingStation::ComputeDistances(std::map<std::string, math::Pose3d>robotPoses, ignition::math::Pose3d dockPose){
+std::vector<std::string> ChargingStation::ComputeDistances(std::map<std::string, math::Pose3d>robotPoses){
 
   // Norm of the distance between the charging station and a given robot
   double dist;
   // vector of names of robots that are close enough to this charging station
   std::vector<std::string> result;
-
+ 
   // iterate through robot map
   for(const auto &pair : robotPoses){
 
-    // Create a rotation matrix that converts the world frame into the robot frame
-    Eigen::Matrix3d robotRot = rpyToRotationMatrix(pair.second.Roll(),pair.second.Pitch(),pair.second.Yaw()); 
-
-    // Create a vector of the translation of the specific link in the robot frame
-    Eigen::Vector3d linkTranslation(this->poseLink.X(),this->poseLink.Y(),this->poseLink.Z());
-    
-    // Convert the link translation to the world frame
-    Eigen::Vector3d linkTranslationWorld = robotRot*(linkTranslation);
-
     // Vector that holds the robot current position in the world frame
     Eigen::Vector3d robotPosition(pair.second.X(),pair.second.Y(),pair.second.Z());
-    
     // Get the position of the specific link
-    robotPosition += linkTranslationWorld;
-
-    // Vector that holds the dock position
-    Eigen::Vector3d dockPosition(dockPose.X(), dockPose.Y(), dockPose.Z());
-
+    robotPosition += this->robotsMap[pair.first].getLinkPose();
     // Distance between the dock and the robot link
-    Eigen::Vector3d result_vector = dockPosition-robotPosition;
-
+    Eigen::Vector3d result_vector = this->dockPoint-robotPosition;
     // euclidian distance
     dist = sqrt(pow(result_vector[0], 2) + pow(result_vector[1], 2));
 
@@ -221,7 +219,8 @@ std::vector<std::string> ChargingStation::ComputeDistances(std::map<std::string,
 /////////////////////////////////////////////////
 /// \brief Function used to instatiate, populate and associate UserVars to a robot
 /// \param[in] token name of the robot
-void ChargingStation::PopulateMap(std::string &token){
+/// \param[in] link Alignment link 
+void ChargingStation::PopulateMap(std::string token,  Eigen::Vector3d link){
 
   std::string start_topic, stop_topic;
   ignition::transport::Node::Publisher publisher_start, publisher_stop;
@@ -229,8 +228,8 @@ void ChargingStation::PopulateMap(std::string &token){
   stop_topic = "/model/" + token + "/battery/linear_battery/recharge/stop";
   publisher_start = this->node.Advertise<ignition::msgs::Boolean>(start_topic);
   publisher_stop = this->node.Advertise<ignition::msgs::Boolean>(stop_topic);
-  this->robots.push_back(token);
-  this->robotsMap.insert({token, UserVars(publisher_start,publisher_stop, false)});
+  
+  this->robotsMap.insert({token, UserVars(publisher_start,publisher_stop, false, link)});
 }
 
 /////////////////////////////////////////////////
@@ -284,6 +283,24 @@ Eigen::Matrix4d ChargingStation::createHomogenousMat(double x, double y, double 
 
   return transformation;
 }
+
+Eigen::Vector3d ChargingStation::GetTransform(ignition::math::Pose3d primaryPose, ignition::math::Pose3d secondaryPose){
+
+  // Create a rotation matrix that converts the secondary frame into the primary frame 
+  Eigen::Matrix3d primaryRot = rpyToRotationMatrix(primaryPose.Roll(),primaryPose.Pitch(),primaryPose.Yaw());
+  // Vector that holds the primary position
+  Eigen::Vector3d primaryPosition(primaryPose.X(),primaryPose.Y(),primaryPose.Z());
+  // Vector that holds the secondary position
+  Eigen::Vector3d secondaryPosition(secondaryPose.X(),secondaryPose.Y(),secondaryPose.Z());
+  // Convert the socondary position to the primary frame
+  Eigen::Vector3d secondaryPosToPrimaryFrame = primaryRot*(secondaryPosition);
+  return secondaryPosToPrimaryFrame;
+
+}
+
+
+
+
 
 // Register this plugin
 IGNITION_ADD_PLUGIN(ChargingStation,

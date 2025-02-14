@@ -29,15 +29,19 @@ public:
   ignition::transport::Node::Publisher topicStart;
   ignition::transport::Node::Publisher topicStop;
   bool lastMsg;
+  Eigen::Vector3d link;
 
   UserVars() = default;
-  UserVars(ignition::transport::Node::Publisher topic1, ignition::transport::Node::Publisher topic2, bool last): topicStart(topic1), topicStop(topic2), lastMsg(last){}
+  UserVars(ignition::transport::Node::Publisher topic1, ignition::transport::Node::Publisher topic2, bool last, Eigen::Vector3d link_): topicStart(topic1), topicStop(topic2), lastMsg(last), link(link_){}
 
   ignition::transport::Node::Publisher getTopicStart(){
     return topicStart;
   }
   ignition::transport::Node::Publisher getTopicStop(){
     return topicStop;
+  }
+  Eigen::Vector3d getLinkPose(){
+    return link;
   } 
   bool getLastMsg(){
     return lastMsg;
@@ -91,12 +95,12 @@ class ChargingStation : public ignition::gazebo::System,
   /// \param[in] robotPoses map of all the robots' pose in the world frame
   /// \param[in] dockPose Dock pose in the world frame
   /// \return Returns a Vector of robot names that are very close to the charging station
-  private: std::vector<std::string> ComputeDistances(std::map<std::string, math::Pose3d> robotPoses, ignition::math::Pose3d dockPose);
+  private: std::vector<std::string> ComputeDistances(std::map<std::string, math::Pose3d> robotPoses);
  
   /////////////////////////////////////////////////
   /// \brief Function used to instatiate, populate and associate UserVars to a robot
   /// \param[in] token name of the robot
-  private: void PopulateMap(std::string &token);
+  private: void PopulateMap(std::string token, Eigen::Vector3d link);
 
 
   /////////////////////////////////////////////////
@@ -105,6 +109,9 @@ class ChargingStation : public ignition::gazebo::System,
   /// \param[in] pitch rotation around the y-axis
   /// \param[in] yaw rotation around the z-axis
   private: Eigen::Matrix3d rpyToRotationMatrix(double roll, double pitch, double yaw);
+
+
+  private: Eigen::Vector3d GetTransform(ignition::math::Pose3d primaryPose, ignition::math::Pose3d secondaryPose);
 
 
   /////////////////////////////////////////////////
@@ -149,14 +156,11 @@ class ChargingStation : public ignition::gazebo::System,
   public: std::string robotFrame;
 
   /// \brief pose of robotFrame
-  public: ignition::math::Pose3d poseLink;
+  public: ignition::math::Pose3d poseLink{0.0,0.0,0.0,0.0,0.0,0.0};
 
   /// \brief minimum distance beteen the robot and the charging station
   public: std::string tolerance;
-
-  /// \brief link of the charging station 
-  public: std::vector<Entity> dockLink;
-  
+ 
   /// \brief Publishers
   public: std::map<std::string, ignition::transport::Node::Publisher> robotToPublisherStart;
   public: std::map<std::string, ignition::transport::Node::Publisher> robotToPublisherStop;
@@ -164,11 +168,11 @@ class ChargingStation : public ignition::gazebo::System,
   /// \brief Last message sent
   public: std::map<std::string, bool> robotLastMsgPub;
 
-  public: Entity ent;
-
   /// \brief Map that holds the robot name and the variables associated with it
   public: std::map<std::string, UserVars> robotsMap;
 
+  // Dock alignment point
+  public: Eigen::Vector3d dockPoint;
 };
 
 
