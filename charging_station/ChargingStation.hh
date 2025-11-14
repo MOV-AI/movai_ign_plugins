@@ -173,8 +173,9 @@ class ChargingStation : public ignition::gazebo::System,
 
   // Dock alignment point
   public: Eigen::Vector3d dockPoint;
-};
 
+  public: Entity entity{kNullEntity};
 
+  };
   
 #endif
