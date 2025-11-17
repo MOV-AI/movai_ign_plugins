@@ -64,7 +64,7 @@ void ChargingStation::Configure(const Entity &_entity,
     return;
   // Get the components name to publish the signal for the robot to start charging
   std::string chargeName = _ecm.Component<components::Name>(_entity)->Data();
-  auto dockLink = _ecm.ChildrenByComponents(_entity, components::Link());
+
   std::string worldName = _ecm.Component<components::Name>(worldEntity)->Data();
   std::vector<std::string> topics;
   std::string delimiter = ",";
@@ -107,14 +107,7 @@ void ChargingStation::Configure(const Entity &_entity,
     this->robotName.erase(0, pos + delimiter.length());
   } while (pos != std::string::npos);
 
-  // Get dock alignment point
-  ignition::math::Pose3d dockPose = _ecm.Component<components::Pose>(_entity)->Data();
-  const auto link_ = _ecm.Component<components::Pose>(dockLink[0]); 
-  const auto dockLinkPose = link_->Data();
-  Eigen::Vector3d dockLinkTransformed = GetTransform(dockPose, dockLinkPose);
-  Eigen::Vector3d dockPosition(dockPose.X(),dockPose.Y(),dockPose.Z());
-  this->dockPoint = dockPosition + dockLinkTransformed;
-
+  this->entity = _entity;
   // optional subscriber to start the charging station plugin logic
   this->node.Subscribe("/start_docking", &ChargingStation::OnDockCmd, this);
 
@@ -136,6 +129,15 @@ void ChargingStation::Update(const ignition::gazebo::UpdateInfo &_info,
 
   if(this->checkDocking){
     
+    // Get dock alignment point
+    ignition::math::Pose3d dockPose = _ecm.Component<components::Pose>(this->entity)->Data();
+    auto dockLink = _ecm.ChildrenByComponents(this->entity, components::Link());
+    const auto link_ = _ecm.Component<components::Pose>(dockLink[0]); 
+    const auto dockLinkPose = link_->Data();
+    Eigen::Vector3d dockLinkTransformed = GetTransform(dockPose, dockLinkPose);
+    Eigen::Vector3d dockPosition(dockPose.X(),dockPose.Y(),dockPose.Z());
+    this->dockPoint = dockPosition + dockLinkTransformed;
+
     std::map<std::string,math::Pose3d> robotPoses;
     auto worldEntity = _ecm.EntityByComponents(components::World());
     const auto models = _ecm.EntitiesByComponents(components::ParentEntity(worldEntity), components::Model());
