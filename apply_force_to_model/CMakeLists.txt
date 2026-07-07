@@ -16,10 +16,10 @@ find_package(ignition-transport11 REQUIRED)
 # Set Mov.Ai Ignition docker plugins library directory
  #set(CMAKE_LIBRARY_OUTPUT_DIRECTORY /usr/lib/x86_64-linux-gnu/ign-gazebo-6/plugins)
 
-add_library(SpawnModel SHARED
-  SpawnModel.cc
+add_library(ApplyForceToModel SHARED
+  ApplyForceToModel.cc
 )
-target_link_libraries(SpawnModel
+target_link_libraries(ApplyForceToModel
   PRIVATE 
     ignition-plugin1::ignition-plugin1
     ignition-gazebo6::ignition-gazebo6
