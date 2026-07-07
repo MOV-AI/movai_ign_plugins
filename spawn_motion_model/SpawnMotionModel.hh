@@ -1,130 +1,83 @@
-#ifndef SPAWNMODEL_HH_
-#define SPAWNMODEL_HH_
+#ifndef SPAWNMOTIONMODEL_HH_
+#define SPAWNMOTIONMODEL_HH_
 
-#include <ignition/gazebo/System.hh>
-#include <ignition/transport/Node.hh>
-#include "ignition/gazebo/Model.hh"
-#include <ignition/common/Profiler.hh>
-#include "ignition/gazebo/components/Name.hh"
-#include "ignition/gazebo/components/World.hh"
-#include <ignition/gazebo/components/ParentEntity.hh>
-#include <ignition/gazebo/components/Model.hh>
-#include <ignition/gazebo/components/Pose.hh>
-#include <ignition/gazebo/EntityComponentManager.hh>
-#include <ignition/msgs/Utility.hh>
-#include <ignition/msgs/entity_wrench.pb.h>
-#include <ignition/msgs/wrench.pb.h>
+#include <string>
 #include <mutex>
+#include <vector>
 
+#include <ignition/common/Profiler.hh>
+#include <ignition/gazebo/EntityComponentManager.hh>
+#include <ignition/gazebo/System.hh>
+#include <ignition/math/Pose3.hh>
+#include <ignition/math/Vector3.hh>
+#include <ignition/msgs/pose_v.pb.h>
+#include <ignition/transport/Node.hh>
 
-using namespace ignition;
-using namespace gazebo;
-using namespace systems;
-
-/// \brief Spawn Object Plugin that can identify and trigger the creation of the object it is attached to
 class SpawnMotionModel : public ignition::gazebo::System,
-    public ignition::gazebo::ISystemConfigure,
-    public ignition::gazebo::ISystemUpdate,
-    public ignition::gazebo::ISystemPostUpdate
+                         public ignition::gazebo::ISystemConfigure,
+                         public ignition::gazebo::ISystemUpdate
 {
-  /// \brief Constructor
   public: SpawnMotionModel();
 
-  /// \brief Destructor
   public: ~SpawnMotionModel() override;
 
-  //////////////////////////////////////////////////
-  /// \brief This function is called when the model attached is loaded in the simulation
-  /// \param[in] _entity Object model that this plugin is attached 
-  /// \param[in] _sdf SDF element of the plugin in the model attached 
-  /// \param[in] _ecm Entity Component Manager
-  public: void Configure(const Entity &_entity,
-                           const std::shared_ptr<const sdf::Element> &_sdf,
-                           EntityComponentManager &_ecm,
-                           EventManager &_eventMgr) override;
+  public: void Configure(const ignition::gazebo::Entity &_entity,
+                         const std::shared_ptr<const sdf::Element> &_sdf,
+                         ignition::gazebo::EntityComponentManager &_ecm,
+                         ignition::gazebo::EventManager &_eventMgr) override;
 
-  //////////////////////////////////////////////////
-  /// \brief This function is called in each simulation step update.
-  /// \param[in] _info Simulation state information
-  /// \param[in] _ecm Entity Component Manager
   public: void Update(const ignition::gazebo::UpdateInfo &_info,
-              ignition::gazebo::EntityComponentManager &_ecm);
+                      ignition::gazebo::EntityComponentManager &_ecm) override;
 
-  public: void PostUpdate(const ignition::gazebo::UpdateInfo &_info,
-              const ignition::gazebo::EntityComponentManager &_ecm);
+  private: bool SpawnModel();
 
-  //////////////////////////////////////////////////
-  
-  /// \brief Callback for wrench messages used to move entities
-  /// \param[in] _msg Message
-  private: void OnMyTopic(const ignition::msgs::EntityWrench &_msg);
+  private: bool ReadParameters(const std::shared_ptr<const sdf::Element> &_sdf);
 
-  /// \brief Ignition communication node.
-  public: ignition::transport::Node node;
+  private: void OnMotionCommand(const ignition::msgs::Pose_V &_msg);
 
-  public: transport::Node::Publisher PosePub;
+  private: bool ApplyPendingCommand();
 
-  /// \brief Name of the model to spawn
-   public: std::string  objectName;
+  private: void AdvanceAlongPolygon(double _distance);
 
-  /// \brief World name
-  public: std::string  worldName;
-  
-  /// @brief Object Pose
-  public: std::vector<ignition::msgs::Quaternion> objectOrientation;
+  private: bool ApplyPose();
 
-  public: std::vector<ignition::msgs::Vector3d> objectPosition;
-  /// @brief Number of objects spawned so far
-  public: int nrObjectsSpawned{0};
+  private: ignition::math::Pose3d BuildPose() const;
 
-  /// \brief Spawn trigger variable in the update function
-  public: bool spawnObject{false};
+  private: ignition::transport::Node node;
 
-  /// \brief Model entity that this plugin is attached
-  public: Model model{kNullEntity};
+  private: std::string worldName;
 
-  /// \brief Model names variablle in the update function
-  public: bool string_ready{false};
- 
-  /// \brief To spawn model names vector 
-  public: std::vector<std::string> model_name;
+  private: std::string topicName;
 
-  /// \brief Character between model names 
-  private: char delimiter{'!'};
+  private: std::string modelUri;
 
-  /// \brief Variables to store the desired pose of a model to be moved 
-  public: double qx;
-  public: double qy;
-  public: double qw;
-  public: double qz;
+  private: std::string spawnedModelName;
 
-  public: double x;
-  public: double y;
-  public: double z;
+  private: std::vector<ignition::math::Vector3d> waypoints;
 
-  /// \brief Variables to allow a model to be moved
-  public: std::string move_model_name;
-  public: bool move_model_name_ready{false};
-  public: std::string search_model;
+  private: ignition::math::Vector3d currentPosition{0.0, 0.0, 0.0};
 
-  /// \brief Latest wrench command received from transport callback
-  private: ignition::msgs::Wrench pendingWrench;
+  private: std::size_t nextWaypointIndex{0};
 
-  /// \brief Optional target name provided by incoming command
-  private: std::string pendingTargetName;
+  private: double speed{0.5};
 
-  /// \brief Flag indicating a pending wrench command to apply in Update
-  private: bool hasPendingWrench{false};
+  private: double fixedRoll{0.0};
 
-  /// \brief Number of updates to keep applying the latest wrench command
-  private: uint32_t wrenchHoldSteps{50};
+  private: double fixedPitch{0.0};
 
-  /// \brief Remaining updates for current pending wrench command
-  private: uint32_t wrenchStepsRemaining{0};
+  private: double startYaw{0.0};
 
-  /// \brief Protects shared callback/update command state
-  private: std::mutex msgMutex;
+  private: double currentYaw{0.0};
 
+  private: int requestTimeoutMs{100};
+
+  private: bool configured{false};
+
+  private: bool spawned{false};
+
+  private: bool hasPendingCommand{false};
+
+  private: std::mutex commandMutex;
 };
 
 #endif

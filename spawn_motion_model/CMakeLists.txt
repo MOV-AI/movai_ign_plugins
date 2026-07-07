@@ -24,4 +24,5 @@ target_link_libraries(SpawnMotionModel
     ignition-plugin1::ignition-plugin1
     ignition-gazebo6::ignition-gazebo6
     ignition-rendering6::ignition-rendering6
+    ignition-transport11::ignition-transport11
 )
