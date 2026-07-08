@@ -44,10 +44,10 @@ ign topic -t /world/world_demo/spawn_motion_model \
         data: { key: "model_name" value: "movai_cart" }
         data: { key: "velocity" value: "0.8" }
       }
+      pose: { position: { x: -4 y: -2 z: 0 } }
+      pose: { position: { x: 0 y: -2 z: 0 } }
       pose: { position: { x: 0 y: 0 z: 0 } }
-      pose: { position: { x: 4 y: 0 z: 0 } }
-      pose: { position: { x: 4 y: 3 z: 0 } }
-      pose: { position: { x: 0 y: 3 z: 0 } }'
+      pose: { position: { x: -4 y: 0 z: 0 } }'
 ```
 
 Notes:

@@ -6,8 +6,11 @@
 #include <vector>
 
 #include <ignition/common/Profiler.hh>
+#include <ignition/gazebo/Entity.hh>
 #include <ignition/gazebo/EntityComponentManager.hh>
 #include <ignition/gazebo/System.hh>
+#include <ignition/gazebo/components/Link.hh>
+#include <ignition/gazebo/components/ParentEntity.hh>
 #include <ignition/math/Pose3.hh>
 #include <ignition/math/Vector3.hh>
 #include <ignition/msgs/pose_v.pb.h>
@@ -40,6 +43,10 @@ class SpawnMotionModel : public ignition::gazebo::System,
   private: void AdvanceAlongPolygon(double _distance);
 
   private: bool ApplyPose();
+
+  private: bool ResolveSpawnedEntities(ignition::gazebo::EntityComponentManager &_ecm);
+
+  private: bool ApplyVelocityCommand(ignition::gazebo::EntityComponentManager &_ecm);
 
   private: ignition::math::Pose3d BuildPose() const;
 
@@ -76,6 +83,14 @@ class SpawnMotionModel : public ignition::gazebo::System,
   private: bool spawned{false};
 
   private: bool hasPendingCommand{false};
+
+  private: ignition::gazebo::Entity spawnedModelEntity{ignition::gazebo::kNullEntity};
+
+  private: ignition::gazebo::Entity spawnedLinkEntity{ignition::gazebo::kNullEntity};
+
+  private: double waypointTolerance{0.15};
+
+  private: bool linkResolveWarningShown{false};
 
   private: std::mutex commandMutex;
 };

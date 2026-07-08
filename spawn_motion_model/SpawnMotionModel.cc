@@ -4,7 +4,11 @@
 #include <cmath>
 
 #include <ignition/gazebo/components/Name.hh>
+#include <ignition/gazebo/components/Model.hh>
+#include <ignition/gazebo/components/Pose.hh>
+#include <ignition/gazebo/components/LinearVelocityCmd.hh>
 #include <ignition/gazebo/components/World.hh>
+#include <ignition/gazebo/Model.hh>
 #include <ignition/msgs/Utility.hh>
 #include <ignition/msgs/boolean.pb.h>
 #include <ignition/msgs/entity_factory.pb.h>
@@ -118,7 +122,7 @@ void SpawnMotionModel::Configure(const ignition::gazebo::Entity &_entity,
 }
 
 void SpawnMotionModel::Update(const ignition::gazebo::UpdateInfo &_info,
-                              ignition::gazebo::EntityComponentManager & /*_ecm*/)
+                              ignition::gazebo::EntityComponentManager &_ecm)
 {
   IGN_PROFILE("SpawnMotionModel::Update");
 
@@ -134,12 +138,13 @@ void SpawnMotionModel::Update(const ignition::gazebo::UpdateInfo &_info,
   if (!this->spawned)
     return;
 
-  const double dt = std::chrono::duration<double>(_info.dt).count();
-  if (dt <= 0.0 || this->waypoints.size() < 2 || this->speed <= 0.0)
+  if (!this->ResolveSpawnedEntities(_ecm))
     return;
 
-  this->AdvanceAlongPolygon(this->speed * dt);
-  this->ApplyPose();
+  if (this->waypoints.size() < 2 || this->speed <= 0.0)
+    return;
+
+  this->ApplyVelocityCommand(_ecm);
 }
 
 bool SpawnMotionModel::ReadParameters(const std::shared_ptr<const sdf::Element> &_sdf)
@@ -251,6 +256,8 @@ bool SpawnMotionModel::ApplyPendingCommand()
   }
 
   this->hasPendingCommand = false;
+  this->spawnedModelEntity = ignition::gazebo::kNullEntity;
+  this->spawnedLinkEntity = ignition::gazebo::kNullEntity;
   ignmsg << "SpawnMotionModel accepted command and reset path start to ["
          << this->currentPosition << "]" << std::endl;
   return true;
@@ -265,6 +272,9 @@ bool SpawnMotionModel::SpawnModel()
   const std::string sdf =
       "<sdf version='1.7'>"
       "  <model name='" + this->spawnedModelName + "'>"
+      "    <static>false</static>"
+      "    <self_collide>false</self_collide>"
+      "    <allow_auto_disable>false</allow_auto_disable>"
       "    <include>"
       "      <uri>model://" + this->modelUri + "</uri>"
       "    </include>"
@@ -286,6 +296,7 @@ bool SpawnMotionModel::SpawnModel()
   }
 
   ignmsg << "SpawnMotionModel spawned model [" << this->spawnedModelName << "]" << std::endl;
+  ignmsg << "SpawnMotionModel spawned model with collisions enabled via model dynamics flags." << std::endl;
   return true;
 }
 
@@ -335,6 +346,121 @@ bool SpawnMotionModel::ApplyPose()
   const std::string service = "/world/" + this->worldName + "/set_pose";
   this->node.Request(service, request, this->requestTimeoutMs, response, result);
   return result && response.data();
+}
+
+bool SpawnMotionModel::ResolveSpawnedEntities(ignition::gazebo::EntityComponentManager &_ecm)
+{
+  if (this->spawnedModelEntity == ignition::gazebo::kNullEntity)
+  {
+    this->spawnedModelEntity = _ecm.EntityByComponents(
+        ignition::gazebo::components::Model(),
+        ignition::gazebo::components::Name(this->spawnedModelName));
+
+    if (this->spawnedModelEntity == ignition::gazebo::kNullEntity)
+    {
+      ignerr << "SpawnMotionModel could not resolve spawned model entity ["
+             << this->spawnedModelName << "]" << std::endl;
+      return false;
+    }
+  }
+
+  if (this->spawnedLinkEntity == ignition::gazebo::kNullEntity)
+  {
+    ignition::gazebo::Model model(this->spawnedModelEntity);
+    this->spawnedLinkEntity = model.CanonicalLink(_ecm);
+    if (this->spawnedLinkEntity == ignition::gazebo::kNullEntity)
+    {
+      auto links = model.Links(_ecm);
+      if (!links.empty())
+        this->spawnedLinkEntity = links.front();
+    }
+
+    if (this->spawnedLinkEntity == ignition::gazebo::kNullEntity)
+    {
+      // Some included models are nested, so resolve first descendant link.
+      std::vector<ignition::gazebo::Entity> modelsToVisit{this->spawnedModelEntity};
+      std::size_t index = 0;
+      while (index < modelsToVisit.size() &&
+             this->spawnedLinkEntity == ignition::gazebo::kNullEntity)
+      {
+        const auto modelEntity = modelsToVisit[index++];
+
+        const auto childLinks = _ecm.EntitiesByComponents(
+            ignition::gazebo::components::ParentEntity(modelEntity),
+            ignition::gazebo::components::Link());
+        if (!childLinks.empty())
+        {
+          this->spawnedLinkEntity = childLinks.front();
+          break;
+        }
+
+        const auto childModels = _ecm.EntitiesByComponents(
+            ignition::gazebo::components::ParentEntity(modelEntity),
+            ignition::gazebo::components::Model());
+        for (const auto childModel : childModels)
+          modelsToVisit.push_back(childModel);
+      }
+    }
+
+    if (this->spawnedLinkEntity == ignition::gazebo::kNullEntity)
+    {
+      if (!this->linkResolveWarningShown)
+      {
+        ignerr << "SpawnMotionModel could not resolve a link for model ["
+               << this->spawnedModelName << "]" << std::endl;
+        this->linkResolveWarningShown = true;
+      }
+      return false;
+    }
+
+    this->linkResolveWarningShown = false;
+    ignmsg << "SpawnMotionModel resolved link entity ["
+           << this->spawnedLinkEntity << "] for model ["
+           << this->spawnedModelName << "]" << std::endl;
+  }
+
+  return true;
+}
+
+bool SpawnMotionModel::ApplyVelocityCommand(ignition::gazebo::EntityComponentManager &_ecm)
+{
+  const auto *poseComp = _ecm.Component<ignition::gazebo::components::Pose>(
+      this->spawnedModelEntity);
+  if (poseComp == nullptr)
+    return false;
+
+  const ignition::math::Vector3d current = poseComp->Data().Pos();
+  const auto &target = this->waypoints[this->nextWaypointIndex];
+
+  auto toTarget = target - current;
+  if (toTarget.Length() <= this->waypointTolerance)
+  {
+    this->nextWaypointIndex = (this->nextWaypointIndex + 1) % this->waypoints.size();
+    toTarget = this->waypoints[this->nextWaypointIndex] - current;
+  }
+
+  if (toTarget.Length() < 1e-9)
+    return true;
+
+  this->currentYaw = SegmentYaw(current, this->waypoints[this->nextWaypointIndex], this->currentYaw);
+  const ignition::math::Vector3d velocityCmd = toTarget.Normalized() * this->speed;
+
+  auto *velComp = _ecm.Component<ignition::gazebo::components::LinearVelocityCmd>(
+      this->spawnedLinkEntity);
+  if (velComp == nullptr)
+  {
+    _ecm.CreateComponent(
+        this->spawnedLinkEntity,
+        ignition::gazebo::components::LinearVelocityCmd(velocityCmd));
+  }
+  else
+  {
+    _ecm.SetComponentData<ignition::gazebo::components::LinearVelocityCmd>(
+        this->spawnedLinkEntity,
+        velocityCmd);
+  }
+
+  return true;
 }
 
 ignition::math::Pose3d SpawnMotionModel::BuildPose() const
