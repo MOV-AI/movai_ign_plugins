@@ -1,6 +1,6 @@
 # SpawnMotionModel
 
-This plugin subscribes to one Ignition topic. When it receives a command, it spawns one model and makes it move forever along a closed polygon.
+This plugin subscribes to two Ignition topics. When it receives a command, it spawns one model and makes it move forever along a closed polygon.
 
 How it works:
 - The command message provides:
@@ -14,7 +14,8 @@ How it works:
 
 Topic:
 - Default topic: `/world/<world_name>/spawn_motion_model`
-- The topic is hardcoded in the plugin.
+- JSON topic: `/world/<world_name>/spawn_motion_model_json`
+- Both topics are hardcoded in the plugin.
 
 Example plugin block:
 
@@ -29,6 +30,9 @@ Example plugin block:
 
 Command message type:
 - `ignition.msgs.Pose_V`
+
+JSON command message type:
+- `ignition.msgs.StringMsg`
 
 Command message format:
 - `header.data[key=model_name]`: model name to spawn from `model://...`
@@ -50,11 +54,21 @@ ign topic -t /world/world_demo/spawn_motion_model \
       pose: { position: { x: -4 y: 0 z: 0 } }'
 ```
 
+Example JSON publish command:
+
+```bash
+ign topic -t /world/world_demo/spawn_motion_model_json \
+  -m ignition.msgs.StringMsg \
+  -p 'data: "{\"model_name\":\"pallet\",\"velocity\":0.8,\"poses\":[[-4.0,-2.0,0.0],[0.0,-2.0,0.0],[0.0,0.0,0.0],[-4.0,0.0,0.0]]}"'
+```
+
 Notes:
 - Load this plugin as a world plugin, not inside a model.
 - Logs are printed by Ignition Gazebo in the simulator terminal, not by the `ign topic` command itself.
 - Send at least two poses in the command.
+- JSON commands must include `model_name`, `velocity`, and `poses` where each pose is `[x, y, z]`.
 - The plugin uses one internal spawned instance named `spawn_motion_model`.
-- If a new command arrives after the model is already spawned, the plugin reuses that same spawned model and restarts the path from the first waypoint.
-- `roll` and `pitch` are optional and default to `0`.
-- `request_timeout_ms` is optional and defaults to `100`.
+- If a new command arrives with the same `model_name`, the plugin reuses the spawned instance and restarts the path.
+- If a new command arrives with a different `model_name`, the plugin removes the spawned instance and spawns the new model.
+- The plugin ignores extra SDF parameters and always uses yaw from the waypoint direction.
+- The spawn and set-pose service request timeout is fixed inside the plugin.
